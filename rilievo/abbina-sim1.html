@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abbina – scatti 360 ↔ punti del rilievo</title>
+<style>
+  /* Pagina autonoma: nessuna risorsa esterna, funziona da file:// e senza rete. */
+  :root {
+    --sfondo: #f4f5f7; --pannello: #ffffff; --pannello-2: #eef0f3; --testo: #15191e; --testo-2: #525c68;
+    --bordo: #d3d8de; --accento: #0b63c6; --accento-chiaro: #dbe9fb; --giallo: #fff2b3; --giallo-bordo: #e0b400;
+    --arancio: #ffe0c2; --arancio-bordo: #e07b00; --ok: #1d8f46; --ok-chiaro: #dcf3e4; --errore: #c62828; --ombra: 0 1px 3px rgba(0,0,0,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sfondo: #12161b; --pannello: #1b2129; --pannello-2: #242c36; --testo: #eef1f4; --testo-2: #aab4bf;
+      --bordo: #39434f; --accento: #5aa9ff; --accento-chiaro: #1d3a5c; --giallo: #4d4100; --giallo-bordo: #e0b400;
+      --arancio: #4d2a00; --arancio-bordo: #ff9a3c; --ok: #4fd37f; --ok-chiaro: #163d25; --errore: #ff6b6b; --ombra: 0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--sfondo); color: var(--testo); font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  .nascosto { display: none !important; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 6px; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ---------- testata con i passi ---------- */
+  #testata { background: var(--pannello); border-bottom: 1px solid var(--bordo); padding: 10px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--ombra); z-index: 2; }
+  #testata .riga-titolo { display: flex; align-items: baseline; gap: 14px; }
+  #testata .riga-titolo span { color: var(--testo-2); }
+  #passi { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 12px; }
+  .passo { border: 2px dashed var(--bordo); border-radius: 10px; padding: 10px 12px; background: var(--pannello-2); min-height: 96px; }
+  .passo.trascina { border-color: var(--accento); background: var(--accento-chiaro); }
+  .passo.fatto { border-style: solid; border-color: var(--ok); }
+  .passo .num { display: inline-block; background: var(--accento); color: #fff; border-radius: 999px; width: 22px; height: 22px; text-align: center; line-height: 22px; font-weight: 700; margin-right: 6px; font-size: 13px; }
+  .passo label.tasto, .tasto { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--bordo); background: var(--pannello); cursor: pointer; font-weight: 600; }
+  .tasto.primario { background: var(--accento); color: #fff; border-color: var(--accento); }
+  .tasto.ok { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .passo input[type=file] { display: none; }
+  .passo .esito { margin-top: 6px; color: var(--testo-2); }
+  .passo .esito.ok { color: var(--ok); font-weight: 600; }
+  .scarto-riga { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+  .scarto-riga input[type=number] { width: 90px; padding: 6px 8px; border: 1px solid var(--bordo); border-radius: 8px; background: var(--pannello); font-size: 16px; }
+  #suggerimento { color: var(--testo-2); }
+  #suggerimento b { color: var(--testo); }
+  #hint-ricava { color: var(--arancio-bordo); font-weight: 700; }
+
+  #riepilogo-riga { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #riepilogo { font-weight: 600; }
+  #riepilogo .n { color: var(--accento); }
+  #riepilogo .warn { color: var(--arancio-bordo); }
+  #azioni { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  #messaggio { min-height: 20px; color: var(--testo-2); }
+  #messaggio.err { color: var(--errore); font-weight: 600; }
+
+  /* ---------- due colonne ---------- */
+  #colonne { flex: 1; display: grid; grid-template-columns: 2fr 3fr; gap: 0; min-height: 0; }
+  .colonna { overflow: auto; padding: 12px 16px; min-height: 0; }
+  #colonna-foto { border-right: 1px solid var(--bordo); background: var(--sfondo); }
+  .sezione { margin-bottom: 16px; }
+  .sezione h2 .conta { color: var(--testo); }
+  .vuoto { color: var(--testo-2); font-style: italic; padding: 8px 0; }
+
+  /* scheda foto */
+  .foto { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; background: var(--pannello); border: 2px solid var(--bordo); border-radius: 10px; padding: 6px; margin-bottom: 8px; cursor: grab; box-shadow: var(--ombra); }
+  .foto:active { cursor: grabbing; }
+  .foto img { width: 150px; height: 75px; object-fit: cover; border-radius: 6px; background: #000; display: block; }
+  .foto .senza-thumb { width: 150px; height: 75px; border-radius: 6px; background: var(--pannello-2); display: flex; align-items: center; justify-content: center; color: var(--testo-2); font-size: 12px; }
+  .foto .nome { font-weight: 600; word-break: break-all; }
+  .foto .ora { color: var(--testo-2); }
+  .foto .ora b { color: var(--testo); font-variant-numeric: tabular-nums; }
+  .foto.selezionata { border-color: var(--accento); box-shadow: 0 0 0 3px var(--accento-chiaro); }
+  .foto.senza { border-color: var(--arancio-bordo); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid transparent; margin-right: 4px; }
+  .badge.file { background: var(--arancio); border-color: var(--arancio-bordo); }
+  .badge.senza { background: var(--arancio); border-color: var(--arancio-bordo); }
+  .badge.verso { background: var(--accento-chiaro); border-color: var(--accento); }
+  .badge.conf { background: var(--ok-chiaro); border-color: var(--ok); }
+  .badge.prop { background: var(--pannello-2); border-color: var(--bordo); }
+  .badge.ripiego { background: var(--giallo); border-color: var(--giallo-bordo); }
+  .badge.manca { background: var(--giallo); border-color: var(--giallo-bordo); }
+  .badge.raffica { background: var(--pannello-2); border-color: var(--bordo); }
+  .badge.rifare { background: #fde2e2; border-color: var(--errore); color: var(--errore); }
+
+  /* zona "senza punto" come bersaglio */
+  .bersaglio-senza { border: 2px dashed var(--arancio-bordo); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; color: var(--testo-2); }
+  .bersaglio-senza.sopra, .punto.sopra { background: var(--accento-chiaro); border-color: var(--accento); }
+
+  /* scheda punto */
+  .punto { background: var(--pannello); border: 2px solid var(--bordo); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; box-shadow: var(--ombra); display: grid; grid-template-columns: 64px 1fr; gap: 10px; }
+  .punto.mancante { background: var(--giallo); border-color: var(--giallo-bordo); }
+  .punto.confermato { border-color: var(--ok); }
+  .punto.dev { margin-left: 36px; }
+  .punto .ordine { font-size: 28px; font-weight: 800; text-align: center; line-height: 1; padding-top: 6px; font-variant-numeric: tabular-nums; }
+  .punto .ordine small { display: block; font-size: 12px; font-weight: 600; color: var(--testo-2); margin-top: 4px; }
+  .punto .intestazione { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .punto .tipo { font-weight: 700; text-transform: capitalize; }
+  .punto .ora { color: var(--testo-2); font-variant-numeric: tabular-nums; }
+  .punto .nota { color: var(--testo-2); font-style: italic; margin-top: 2px; }
+  .punto .scatti { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .scatto { position: relative; border: 3px solid transparent; border-radius: 8px; cursor: pointer; width: 132px; }
+  .scatto img { width: 126px; height: 63px; object-fit: cover; display: block; border-radius: 5px; background: #000; }
+  .scatto .did { font-size: 11px; color: var(--testo-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 2px 0; }
+  .scatto.scelto { border-color: var(--ok); }
+  .scatto.scelto::after { content: "scelto"; position: absolute; top: 4px; left: 4px; background: var(--ok); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+  .punto .azioni-punto { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .punto .azioni-punto button { padding: 3px 9px; border-radius: 6px; border: 1px solid var(--bordo); background: var(--pannello-2); font-size: 13px; }
+  .punto .manca { font-weight: 700; color: #6b5300; }
+  @media (prefers-color-scheme: dark) { .punto .manca { color: #ffd84d; } .badge.rifare { background: #4d1a1a; } }
+</style>
+</head>
+<body>
+
+<div id="testata">
+  <div class="riga-titolo">
+    <h1>Abbina</h1>
+    <span>scatti 360 ↔ punti toccati sul telefono. Tutto resta sul tuo computer: nessun caricamento in rete.</span>
+  </div>
+
+  <div id="passi">
+    <!-- Passo 1: sessione JSON -->
+    <div class="passo" id="passo-json">
+      <div><span class="num">1</span><b>Sessione del telefono</b> (JSON)</div>
+      <div style="margin-top:6px">
+        <label class="tasto" for="input-json">Scegli il file .json</label>
+        <input type="file" id="input-json" accept=".json,application/json">
+        <span style="color:var(--testo-2)">oppure trascinalo qui</span>
+      </div>
+      <div class="esito" id="esito-json">Nessuna sessione caricata.</div>
+    </div>
+
+    <!-- Passo 2: foto -->
+    <div class="passo" id="passo-foto">
+      <div><span class="num">2</span><b>Foto 360</b> (JPEG dalla camera)</div>
+      <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+        <label class="tasto" for="input-foto">Scegli le foto</label>
+        <input type="file" id="input-foto" accept="image/jpeg,.jpg,.jpeg" multiple>
+        <label class="tasto" for="input-cartella">Scegli una cartella</label>
+        <input type="file" id="input-cartella" accept="image/jpeg,.jpg,.jpeg" multiple webkitdirectory>
+        <span style="color:var(--testo-2)">o trascina</span>
+      </div>
+      <div class="esito" id="esito-foto">Nessuna foto caricata.</div>
+    </div>
+
+    <!-- Passo 3: scarto -->
+    <div class="passo" id="passo-scarto">
+      <div><span class="num">3</span><b>Scarto orologio</b> camera ↔ telefono</div>
+      <div class="scarto-riga">
+        <label for="scarto">scarto in secondi</label>
+        <input type="number" id="scarto" value="0" step="1">
+        <button class="tasto" id="btn-ricava" type="button" disabled title="Trascina prima la foto giusta sul primo punto">Ricava dal primo abbinamento</button>
+        <span id="hint-ricava" class="nascosto">← ora ricava lo scarto</span>
+      </div>
+      <div class="scarto-riga">
+        <span id="suggerimento">Suggerimento: carica sessione e foto.</span>
+        <button class="tasto" id="btn-usa-suggerimento" type="button" disabled>Usa</button>
+        <label for="margine" title="Una foto scattata fino a questi secondi PRIMA del tocco viene attribuita a quel punto (assorbe la variazione del ritardo fra tocco e scatto)">anticipo tollerato</label>
+        <input type="number" id="margine" value="30" step="5" min="0" style="width:70px"> s
+      </div>
+    </div>
+  </div>
+
+  <div id="riepilogo-riga">
+    <div id="riepilogo">Carica la sessione e le foto per cominciare.</div>
+    <div id="azioni">
+      <button class="tasto ok" id="btn-accetta" type="button" disabled>Accetta tutto</button>
+      <button class="tasto primario" id="btn-json" type="button" disabled>abbinamento.json</button>
+      <button class="tasto" id="btn-csv" type="button" disabled>rinomina.csv</button>
+      <button class="tasto" id="btn-bat" type="button" disabled>rinomina.bat</button>
+      <button class="tasto" id="btn-sh" type="button" disabled>rinomina.sh</button>
+    </div>
+  </div>
+  <div id="messaggio" aria-live="polite"></div>
+</div>
+
+<div id="colonne">
+  <div class="colonna" id="colonna-foto">
+    <div class="sezione">
+      <h2>Senza punto <span class="conta" id="conta-senza">(0)</span></h2>
+      <div class="bersaglio-senza" id="bersaglio-senza">Trascina qui una foto per toglierla da un punto</div>
+      <div id="lista-senza"></div>
+    </div>
+    <div class="sezione">
+      <h2>Foto abbinate <span class="conta" id="conta-abbinate">(0)</span></h2>
+      <div id="lista-abbinate"></div>
+    </div>
+  </div>
+  <div class="colonna" id="colonna-punti">
+    <div class="sezione">
+      <h2>Punti del rilievo <span class="conta" id="conta-punti">(0)</span></h2>
+      <div id="lista-punti"><div class="vuoto">Carica la sessione per vedere i punti.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------
+  // Stato
+  // ------------------------------------------------------------------
+  var sessione = null;   // JSON del telefono
+  var punti = [];        // punti ordinati per ora del tocco
+  var foto = [];         // foto caricate
+  var scarto = 0;        // secondi da sommare all'ora della camera
+  var margine = 30;      // anticipo tollerato (s)
+  var confermati = {};   // ordine -> true
+  var scelte = {};       // ordine -> id della foto scelta nella raffica
+  var selezionata = null; // id della foto selezionata con un clic (flusso a tocco)
+  var ricavato = false;  // lo scarto e' gia' stato ricavato almeno una volta
+  var contatoreId = 0;
+  var risultato = null;  // esito dell'ultimo calcolo
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, testo) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (testo !== undefined && testo !== null) e.textContent = testo;
+    return e;
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function oraHMS(ms) {
+    if (ms === null || ms === undefined || isNaN(ms)) return '—';
+    var d = new Date(ms);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+  function isoLocale(ms) {
+    if (ms === null || ms === undefined || isNaN(ms)) return null;
+    return new Date(ms).toISOString();
+  }
+  function messaggio(testo, errore) {
+    var m = $('messaggio');
+    m.textContent = testo || '';
+    m.classList.toggle('err', !!errore);
+  }
+
+  // ------------------------------------------------------------------
+  // Parser EXIF minimale: APP1 "Exif", TIFF II/MM, IFD0 -> ExifIFD (0x8769)
+  // Cerca DateTimeOriginal (0x9003), poi DateTimeDigitized (0x9004), poi DateTime (0x0132 in IFD0)
+  // ------------------------------------------------------------------
+  function leggiExif(buffer) {
+    try {
+      var dv = new DataView(buffer);
+      if (dv.byteLength < 4 || dv.getUint16(0) !== 0xFFD8) return null;
+      var off = 2;
+      while (off + 4 <= dv.byteLength) {
+        if (dv.getUint8(off) !== 0xFF) { off++; continue; }
+        var marker = dv.getUint8(off + 1);
+        if (marker === 0xFF) { off++; continue; }                         // riempimento
+        if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { off += 2; continue; } // senza lunghezza
+        if (marker === 0xDA || marker === 0xD9) break;                     // inizio dati immagine / fine: basta
+        var len = dv.getUint16(off + 2);
+        if (len < 2) break;
+        if (marker === 0xE1 && off + 10 <= dv.byteLength &&
+            dv.getUint32(off + 4) === 0x45786966 && dv.getUint16(off + 8) === 0x0000) {  // "Exif\0\0"
+          var r = leggiTiff(dv, off + 10, Math.min(dv.byteLength, off + 2 + len));
+          if (r) return r;
+        }
+        off += 2 + len;
+      }
+    } catch (e) { /* file troncato o strano: niente EXIF */ }
+    return null;
+  }
+  function leggiTiff(dv, tiff, fine) {
+    var bo = dv.getUint16(tiff), little;
+    if (bo === 0x4949) little = true; else if (bo === 0x4D4D) little = false; else return null;
+    if (dv.getUint16(tiff + 2, little) !== 0x2A) return null;
+    var ifd0 = dv.getUint32(tiff + 4, little);
+    var out = { originale: null, digitalizzata: null, data: null };
+
+    function ascii(offValore, count) {
+      var s = '';
+      for (var i = 0; i < count && offValore + i < dv.byteLength; i++) {
+        var c = dv.getUint8(offValore + i);
+        if (c === 0) break;
+        s += String.fromCharCode(c);
+      }
+      return s;
+    }
+    function leggiIfd(ifdOff) {
+      var ris = {};
+      if (tiff + ifdOff + 2 > dv.byteLength) return ris;
+      var n = dv.getUint16(tiff + ifdOff, little);
+      for (var i = 0; i < n; i++) {
+        var e = tiff + ifdOff + 2 + i * 12;
+        if (e + 12 > dv.byteLength) break;
+        var tag = dv.getUint16(e, little);
+        var tipo = dv.getUint16(e + 2, little);
+        var count = dv.getUint32(e + 4, little);
+        if (tag === 0x8769 || tag === 0xA005) {              // puntatori a sotto-IFD (LONG)
+          ris[tag] = dv.getUint32(e + 8, little);
+        } else if (tipo === 2) {                               // ASCII
+          var offV = count <= 4 ? e + 8 : tiff + dv.getUint32(e + 8, little);
+          ris[tag] = ascii(offV, count);
+        }
+      }
+      return ris;
+    }
+    var i0 = leggiIfd(ifd0);
+    if (i0[0x0132]) out.data = i0[0x0132];
+    if (typeof i0[0x8769] === 'number') {
+      var ie = leggiIfd(i0[0x8769]);
+      if (ie[0x9003]) out.originale = ie[0x9003];
+      if (ie[0x9004]) out.digitalizzata = ie[0x9004];
+    }
+    return out;
+  }
+  function dataExifMs(s) {
+    if (!s) return null;
+    var m = /^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(String(s).trim());
+    if (!m) return null;
+    var d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+    var ms = d.getTime();
+    return isNaN(ms) ? null : ms;
+  }
+
+  // ------------------------------------------------------------------
+  // Miniatura piccola (mai l'originale nel DOM)
+  // ------------------------------------------------------------------
+  function miniatura(file) {
+    var L = 320;
+    function daImmagine() {
+      return new Promise(function (res) {
+        var url = URL.createObjectURL(file);
+        var im = new Image();
+        im.onload = function () {
+          try {
+            var h = Math.max(1, Math.round(L * im.naturalHeight / im.naturalWidth));
+            var c = document.createElement('canvas'); c.width = L; c.height = h;
+            c.getContext('2d').drawImage(im, 0, 0, L, h);
+            res(c.toDataURL('image/jpeg', 0.75));
+          } catch (e) { res(null); }
+          URL.revokeObjectURL(url);
+        };
+        im.onerror = function () { URL.revokeObjectURL(url); res(null); };
+        im.src = url;
+      });
+    }
+    if (window.createImageBitmap) {
+      return createImageBitmap(file, { resizeWidth: L, resizeQuality: 'medium' }).then(function (bmp) {
+        var c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+        c.getContext('2d').drawImage(bmp, 0, 0);
+        if (bmp.close) bmp.close();
+        return c.toDataURL('image/jpeg', 0.75);
+      }).catch(daImmagine);
+    }
+    return daImmagine();
+  }
+
+  // ------------------------------------------------------------------
+  // Caricamento sessione
+  // ------------------------------------------------------------------
+  function caricaSessioneDaFile(file) {
+    var lettore = new FileReader();
+    lettore.onload = function () {
+      try {
+        var j = JSON.parse(String(lettore.result));
+        impostaSessione(j, file.name);
+      } catch (e) {
+        messaggio('Il file ' + file.name + ' non è un JSON valido.', true);
+      }
+    };
+    lettore.readAsText(file);
+  }
+  function impostaSessione(j, nomeFile) {
+    if (!j || !Array.isArray(j.punti)) { messaggio('JSON senza l\'elenco "punti": non è una sessione del Contapunti.', true); return; }
+    sessione = j;
+    punti = j.punti.map(function (p, i) {
+      return {
+        ordine: Number(p.ordine), tipo: String(p.tipo || 'altro'), oraIso: p.ora, ora: Date.parse(p.ora),
+        nota: p.nota || '', rifare: !!p.rifare, da_punto: p.da_punto, bussola: p.bussola, idx: i, nota_vocale: !!p.nota_vocale
+      };
+    }).filter(function (p) { return !isNaN(p.ora) && !isNaN(p.ordine); });
+    punti.sort(function (a, b) { return a.ora - b.ora || a.idx - b.idx; });
+    confermati = {}; scelte = {}; ricavato = false;
+    foto.forEach(function (f) { delete f.manuale; });
+    var p1 = $('passo-json');
+    p1.classList.add('fatto');
+    var es = $('esito-json');
+    es.textContent = (j.chiesa || 'chiesa senza nome') + ' · ' + punti.length + ' punti · ' + (punti.length ? oraHMS(punti[0].ora) + ' → ' + oraHMS(punti[punti.length - 1].ora) : '') + (nomeFile ? ' · ' + nomeFile : '');
+    es.classList.add('ok');
+    messaggio(punti.length !== j.punti.length ? 'Attenzione: ' + (j.punti.length - punti.length) + ' punti con ora non valida sono stati ignorati.' : '', punti.length !== j.punti.length);
+    ricalcola();
+  }
+
+  // ------------------------------------------------------------------
+  // Caricamento foto
+  // ------------------------------------------------------------------
+  function eJpeg(file) {
+    return file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name);
+  }
+  var codaInCorso = false;
+  function caricaFoto(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    var jpeg = files.filter(eJpeg);
+    var ignorati = files.length - jpeg.length;
+    if (!jpeg.length) { messaggio('Nessun JPEG tra i file scelti' + (ignorati ? ' (' + ignorati + ' file ignorati)' : '') + '.', true); return; }
+    var p2 = $('passo-foto');
+    var i = 0;
+    codaInCorso = true;
+    aggiornaTasti();
+    function prossima() {
+      if (i >= jpeg.length) {
+        codaInCorso = false;
+        p2.classList.add('fatto');
+        var es = $('esito-foto');
+        var senzaExif = foto.filter(function (f) { return f.fonte === 'file'; }).length;
+        es.textContent = foto.length + ' foto caricate' + (senzaExif ? ' · ' + senzaExif + ' senza EXIF (ora dal file)' : '') + (ignorati ? ' · ' + ignorati + ' file non JPEG ignorati' : '');
+        es.classList.add('ok');
+        ricalcola();
+        return;
+      }
+      var file = jpeg[i++];
+      $('esito-foto').textContent = 'Leggo ' + i + '/' + jpeg.length + '… ' + file.name;
+      file.slice(0, 1048576).arrayBuffer().then(function (buf) {
+        var ex = leggiExif(buf);
+        var oraExif = ex ? (dataExifMs(ex.originale) || dataExifMs(ex.digitalizzata) || dataExifMs(ex.data)) : null;
+        return miniatura(file).then(function (thumb) {
+          // stesso nome gia' caricato: sostituisce
+          var k;
+          for (k = foto.length - 1; k >= 0; k--) if (foto[k].nome === file.name) foto.splice(k, 1);
+          foto.push({
+            id: 'f' + (++contatoreId), file: file, nome: file.name,
+            oraExif: oraExif, oraFile: file.lastModified, fonte: oraExif !== null ? 'exif' : 'file',
+            exifTesto: ex ? (ex.originale || ex.digitalizzata || ex.data || null) : null,
+            thumb: thumb
+          });
+        });
+      }).catch(function () {
+        foto.push({ id: 'f' + (++contatoreId), file: file, nome: file.name, oraExif: null, oraFile: file.lastModified, fonte: 'file', exifTesto: null, thumb: null });
+      }).then(function () { setTimeout(prossima, 0); });
+    }
+    prossima();
+  }
+
+  // ------------------------------------------------------------------
+  // Algoritmo di abbinamento
+  // ------------------------------------------------------------------
+  function oraOriginale(f) { return f.oraExif !== null && f.oraExif !== undefined ? f.oraExif : f.oraFile; }
+  function oraCorretta(f) { return oraOriginale(f) + scarto * 1000; }
+
+  function calcola() {
+    var M = margine * 1000;
+    var intervalli = punti.map(function (p, i) {
+      var fine = i + 1 < punti.length ? punti[i + 1].ora - M : p.ora + 30 * 60 * 1000;
+      return { p: p, inizio: p.ora - M, fine: fine };
+    });
+    var perPunto = {};
+    punti.forEach(function (p) { perPunto[p.ordine] = []; });
+    var ordinate = foto.slice().sort(function (a, b) { return oraCorretta(a) - oraCorretta(b) || a.nome.localeCompare(b.nome); });
+    var senza = [];
+    ordinate.forEach(function (f) {
+      f.stato = null; f.punto = null;
+      if (f.manuale === 'senza') { f.stato = 'senza-manuale'; senza.push(f); return; }
+      if (typeof f.manuale === 'number' && perPunto[f.manuale]) { f.stato = 'manuale'; f.punto = f.manuale; perPunto[f.manuale].push(f); return; }
+      var t = oraCorretta(f);
+      for (var i = 0; i < intervalli.length; i++) {
+        if (t >= intervalli[i].inizio && t < intervalli[i].fine) { f.stato = 'auto'; f.punto = intervalli[i].p.ordine; perPunto[f.punto].push(f); return; }
+      }
+      f.stato = 'senza'; senza.push(f);
+    });
+    // Ripiego: punto senza foto, ma una foto "senza punto" adiacente nell'ordine -> proposta per ordine
+    punti.forEach(function (p, i) {
+      if (perPunto[p.ordine].length) return;
+      var prevT = -Infinity, nextT = Infinity, k;
+      for (k = i - 1; k >= 0; k--) { var pp = perPunto[punti[k].ordine]; if (pp.length) { prevT = Math.max.apply(null, pp.map(oraCorretta)); break; } }
+      for (k = i + 1; k < punti.length; k++) { var pn = perPunto[punti[k].ordine]; if (pn.length) { nextT = Math.min.apply(null, pn.map(oraCorretta)); break; } }
+      var candidati = senza.filter(function (f) { var t = oraCorretta(f); return f.stato === 'senza' && t > prevT && t < nextT; });
+      if (!candidati.length) return;
+      candidati.sort(function (a, b) { return Math.abs(oraCorretta(a) - p.ora) - Math.abs(oraCorretta(b) - p.ora); });
+      var f = candidati[0];
+      f.stato = 'ripiego'; f.punto = p.ordine;
+      perPunto[p.ordine].push(f);
+      senza.splice(senza.indexOf(f), 1);
+    });
+    // Raffiche e scelta della foto migliore (predefinita: l'ultima scattata)
+    var schede = punti.map(function (p) {
+      var lista = perPunto[p.ordine].slice().sort(function (a, b) { return oraCorretta(a) - oraCorretta(b); });
+      var gruppi = 0, prec = null;
+      lista.forEach(function (f) { var t = oraCorretta(f); if (prec === null || t - prec > 90000) gruppi++; prec = t; });
+      var scelta = null;
+      if (lista.length) {
+        scelta = lista[lista.length - 1];
+        if (scelte[p.ordine]) { for (var i = 0; i < lista.length; i++) if (lista[i].id === scelte[p.ordine]) scelta = lista[i]; }
+      }
+      var stato;
+      if (!lista.length) stato = 'mancante';
+      else if (confermati[p.ordine]) stato = 'confermato';
+      else if (scelta.stato === 'ripiego') stato = 'ripiego';
+      else stato = 'proposta';
+      return { p: p, foto: lista, scelta: scelta, gruppi: gruppi, stato: stato };
+    });
+    return { schede: schede, senza: senza, ordinate: ordinate };
+  }
+
+  function ricalcola() {
+    risultato = (punti.length || foto.length) ? calcola() : null;
+    disegna();
+  }
+
+  // ------------------------------------------------------------------
+  // Disegno
+  // ------------------------------------------------------------------
+  function nuovoNome(p) { return String(p.ordine).padStart(3, '0') + '-' + slugTipo(p.tipo) + '.jpg'; }
+  function slugTipo(t) {
+    return String(t).toLowerCase().replace(/[àáâä]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i').replace(/[òóôö]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'altro';
+  }
+
+  function schedaFoto(f) {
+    var d = el('div', 'foto' + (f.punto === null ? ' senza' : '') + (selezionata === f.id ? ' selezionata' : ''));
+    d.draggable = true;
+    d.dataset.id = f.id; d.dataset.nome = f.nome;
+    if (f.thumb) { var img = el('img'); img.src = f.thumb; img.alt = f.nome; img.draggable = false; d.appendChild(img); }
+    else d.appendChild(el('div', 'senza-thumb', 'anteprima non disponibile'));
+    var info = el('div');
+    info.appendChild(el('div', 'nome', f.nome));
+    var ora = el('div', 'ora');
+    ora.appendChild(document.createTextNode('ora corretta '));
+    var b = el('b', null, oraHMS(oraCorretta(f)));
+    ora.appendChild(b);
+    ora.appendChild(document.createTextNode(' (camera ' + oraHMS(oraOriginale(f)) + ')'));
+    info.appendChild(ora);
+    var badges = el('div');
+    if (f.fonte === 'file') badges.appendChild(el('span', 'badge file', 'ora dal file'));
+    if (f.punto === null) badges.appendChild(el('span', 'badge senza', f.stato === 'senza-manuale' ? 'senza punto (scelta tua)' : 'senza punto'));
+    else {
+      badges.appendChild(el('span', 'badge verso', '→ punto ' + f.punto));
+      if (f.stato === 'ripiego') badges.appendChild(el('span', 'badge ripiego', 'proposta per ordine'));
+      else if (confermati[f.punto]) badges.appendChild(el('span', 'badge conf', 'confermata'));
+      else badges.appendChild(el('span', 'badge prop', 'proposta'));
+    }
+    info.appendChild(badges);
+    d.appendChild(info);
+    d.addEventListener('dragstart', function (ev) {
+      ev.dataTransfer.setData('text/plain', f.id);
+      ev.dataTransfer.effectAllowed = 'move';
+    });
+    d.addEventListener('click', function () {
+      selezionata = (selezionata === f.id) ? null : f.id;
+      messaggio(selezionata ? 'Foto selezionata: ' + f.nome + ' — ora clicca il punto a cui appartiene (o «Senza punto»).' : '');
+      disegna();
+    });
+    return d;
+  }
+
+  function schedaPunto(s) {
+    var p = s.p;
+    var d = el('div', 'punto ' + s.stato + (p.da_punto !== undefined ? ' dev' : ''));
+    d.dataset.ordine = p.ordine;
+    var colOrd = el('div', 'ordine', String(p.ordine));
+    var sub = el('small', null, p.da_punto !== undefined ? 'dev. da ' + p.da_punto : '');
+    colOrd.appendChild(sub);
+    d.appendChild(colOrd);
+    var corpo = el('div');
+    var testa = el('div', 'intestazione');
+    testa.appendChild(el('span', 'tipo', p.tipo));
+    testa.appendChild(el('span', 'ora', 'tocco ' + oraHMS(p.ora)));
+    if (p.bussola !== null && p.bussola !== undefined) testa.appendChild(el('span', 'ora', Math.round(p.bussola) + '°'));
+    if (p.rifare) testa.appendChild(el('span', 'badge rifare', 'da rifare'));
+    if (s.stato === 'mancante') testa.appendChild(el('span', 'badge manca', 'manca lo scatto'));
+    else if (s.stato === 'confermato') testa.appendChild(el('span', 'badge conf', 'confermato'));
+    else if (s.stato === 'ripiego') testa.appendChild(el('span', 'badge ripiego', 'proposta per ordine'));
+    else testa.appendChild(el('span', 'badge prop', 'proposta'));
+    if (s.foto.length > 1) testa.appendChild(el('span', 'badge raffica', 'raffica di ' + s.foto.length + (s.gruppi > 1 ? ' · ' + s.gruppi + ' gruppi: controlla' : '')));
+    testa.appendChild(el('span', 'ora', '→ ' + nuovoNome(p)));
+    corpo.appendChild(testa);
+    if (p.nota) corpo.appendChild(el('div', 'nota', p.nota + (p.nota_vocale ? ' ♪' : '')));
+    else if (p.nota_vocale) corpo.appendChild(el('div', 'nota', '♪ nota vocale'));
+    if (s.stato === 'mancante') {
+      corpo.appendChild(el('div', 'manca', 'Manca lo scatto: trascina qui la foto giusta, oppure segnalo da rifare.'));
+    } else {
+      var scatti = el('div', 'scatti');
+      s.foto.forEach(function (f) {
+        var sc = el('div', 'scatto' + (s.scelta && s.scelta.id === f.id ? ' scelto' : ''));
+        sc.dataset.id = f.id; sc.dataset.nome = f.nome;
+        sc.title = f.nome + ' · ' + oraHMS(oraCorretta(f)) + ' — clic per scegliere questa';
+        if (f.thumb) { var im = el('img'); im.src = f.thumb; im.alt = f.nome; im.draggable = false; sc.appendChild(im); }
+        else sc.appendChild(el('div', 'senza-thumb', '—'));
+        sc.appendChild(el('div', 'did', oraHMS(oraCorretta(f)) + ' · ' + f.nome));
+        sc.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          scelte[p.ordine] = f.id;
+          ricalcola();
+        });
+        scatti.appendChild(sc);
+      });
+      corpo.appendChild(scatti);
+      var az = el('div', 'azioni-punto');
+      if (s.stato !== 'confermato') {
+        var bc = el('button', null, 'Conferma'); bc.type = 'button';
+        bc.addEventListener('click', function (ev) { ev.stopPropagation(); confermaPunto(p.ordine); });
+        az.appendChild(bc);
+      }
+      var bt = el('button', null, 'Togli le foto'); bt.type = 'button';
+      bt.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        s.foto.forEach(function (f) { f.manuale = 'senza'; });
+        delete confermati[p.ordine]; delete scelte[p.ordine];
+        ricalcola();
+      });
+      az.appendChild(bt);
+      corpo.appendChild(az);
+    }
+    d.appendChild(corpo);
+    // bersaglio: trascinamento e tocco
+    d.addEventListener('dragover', function (ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; d.classList.add('sopra'); });
+    d.addEventListener('dragleave', function () { d.classList.remove('sopra'); });
+    d.addEventListener('drop', function (ev) {
+      ev.preventDefault(); d.classList.remove('sopra');
+      var id = ev.dataTransfer.getData('text/plain');
+      if (id) assegna(id, p.ordine);
+    });
+    d.addEventListener('click', function () {
+      if (selezionata) { var id = selezionata; selezionata = null; assegna(id, p.ordine); }
+    });
+    return d;
+  }
+
+  function disegna() {
+    var ls = $('lista-senza'), la = $('lista-abbinate'), lp = $('lista-punti');
+    ls.innerHTML = ''; la.innerHTML = ''; lp.innerHTML = '';
+    var r = risultato;
+    var nSenza = 0, nAbb = 0;
+    if (r) {
+      r.ordinate.forEach(function (f) {
+        if (f.punto === null) { nSenza++; ls.appendChild(schedaFoto(f)); }
+        else { nAbb++; la.appendChild(schedaFoto(f)); }
+      });
+      r.schede.forEach(function (s) { lp.appendChild(schedaPunto(s)); });
+    }
+    if (!nSenza) ls.appendChild(el('div', 'vuoto', foto.length ? 'Nessuna foto senza punto.' : 'Nessuna foto caricata.'));
+    if (!nAbb) la.appendChild(el('div', 'vuoto', 'Nessuna foto abbinata.'));
+    if (!punti.length) lp.appendChild(el('div', 'vuoto', 'Carica la sessione per vedere i punti.'));
+    $('conta-senza').textContent = '(' + nSenza + ')';
+    $('conta-abbinate').textContent = '(' + nAbb + ')';
+    $('conta-punti').textContent = '(' + punti.length + ')';
+    aggiornaRiepilogo();
+    aggiornaSuggerimento();
+    aggiornaTasti();
+  }
+
+  function aggiornaRiepilogo() {
+    var rp = $('riepilogo');
+    rp.innerHTML = '';
+    if (!risultato) { rp.textContent = 'Carica la sessione e le foto per cominciare.'; return; }
+    var abbinati = 0, mancanti = 0, nonConf = 0;
+    risultato.schede.forEach(function (s) { if (s.stato === 'mancante') mancanti++; else { abbinati++; if (s.stato !== 'confermato') nonConf++; } });
+    function pezzo(n, testo, cls) {
+      var b = el('span', 'n ' + (cls || ''), String(n)); rp.appendChild(b); rp.appendChild(document.createTextNode(' ' + testo + ' · '));
+    }
+    pezzo(punti.length, 'punti'); pezzo(foto.length, 'foto'); pezzo(abbinati, 'abbinati' + (nonConf ? ' (' + nonConf + ' da confermare)' : ''));
+    pezzo(risultato.senza.length, 'senza punto', risultato.senza.length ? 'warn' : '');
+    if (mancanti) pezzo(mancanti, 'manca lo scatto', 'warn');
+    rp.appendChild(document.createTextNode('scarto attuale '));
+    rp.appendChild(el('span', 'n', (scarto > 0 ? '+' : '') + scarto + ' s'));
+  }
+
+  function aggiornaSuggerimento() {
+    var sg = $('suggerimento'), bu = $('btn-usa-suggerimento');
+    if (!punti.length || !foto.length) { sg.textContent = 'Suggerimento: carica sessione e foto.'; bu.disabled = true; bu.dataset.valore = ''; return; }
+    var prima = foto.reduce(function (m, f) { return oraOriginale(f) < oraOriginale(m) ? f : m; }, foto[0]);
+    var sug = Math.round((punti[0].ora - oraOriginale(prima)) / 1000);
+    sg.innerHTML = '';
+    sg.appendChild(document.createTextNode('Suggerimento: '));
+    sg.appendChild(el('b', null, (sug > 0 ? '+' : '') + sug + ' s'));
+    sg.appendChild(document.createTextNode(' allinea la prima foto (' + prima.nome + ') al primo punto (' + punti[0].ordine + '). È solo un\'ipotesi: se la prima foto è una prova, trascina quella giusta sul punto ' + punti[0].ordine + ' e usa «Ricava».'));
+    bu.disabled = (sug === scarto);
+    bu.dataset.valore = String(sug);
+  }
+
+  function primoAbbinamentoManuale() {
+    if (!punti.length) return null;
+    var primo = punti[0];
+    var cand = foto.filter(function (f) { return f.manuale === primo.ordine; });
+    if (!cand.length) return null;
+    if (scelte[primo.ordine]) { for (var i = 0; i < cand.length; i++) if (cand[i].id === scelte[primo.ordine]) return cand[i]; }
+    cand.sort(function (a, b) { return oraOriginale(a) - oraOriginale(b); });
+    return cand[0];
+  }
+
+  function aggiornaTasti() {
+    var pronto = !!(punti.length && foto.length && !codaInCorso);
+    var fm = primoAbbinamentoManuale();
+    $('btn-ricava').disabled = !fm;
+    $('btn-ricava').title = fm ? 'Scarto = ora del tocco del punto ' + punti[0].ordine + ' − ora EXIF di ' + fm.nome : 'Trascina prima la foto giusta sul primo punto';
+    $('hint-ricava').classList.toggle('nascosto', !(fm && !ricavato));
+    var daAccettare = risultato ? risultato.schede.some(function (s) { return s.stato === 'proposta' || s.stato === 'ripiego'; }) : false;
+    $('btn-accetta').disabled = !pronto || !daAccettare;
+    var abbinati = risultato ? risultato.schede.some(function (s) { return s.stato !== 'mancante'; }) : false;
+    ['btn-json', 'btn-csv', 'btn-bat', 'btn-sh'].forEach(function (id) { $(id).disabled = !pronto || !abbinati; });
+  }
+
+  // ------------------------------------------------------------------
+  // Azioni
+  // ------------------------------------------------------------------
+  function trovaFoto(id) { for (var i = 0; i < foto.length; i++) if (foto[i].id === id) return foto[i]; return null; }
+
+  function assegna(id, ordine) {
+    var f = trovaFoto(id); if (!f) return;
+    f.manuale = ordine;
+    scelte[ordine] = f.id;
+    confermati[ordine] = true;
+    messaggio('Foto ' + f.nome + ' assegnata al punto ' + ordine + '.');
+    ricalcola();
+  }
+  function togli(id) {
+    var f = trovaFoto(id); if (!f) return;
+    var vecchio = f.punto;
+    f.manuale = 'senza';
+    if (vecchio !== null && scelte[vecchio] === f.id) delete scelte[vecchio];
+    messaggio('Foto ' + f.nome + ' messa tra le foto senza punto.');
+    ricalcola();
+  }
+  function confermaPunto(ordine) {
+    if (!risultato) return;
+    risultato.schede.forEach(function (s) {
+      if (s.p.ordine !== ordine || !s.foto.length) return;
+      s.foto.forEach(function (f) { f.manuale = ordine; });
+      scelte[ordine] = s.scelta.id;
+      confermati[ordine] = true;
+    });
+    ricalcola();
+  }
+  function accettaTutto() {
+    if (!risultato) return;
+    var n = 0;
+    risultato.schede.forEach(function (s) {
+      if (s.stato === 'proposta' || s.stato === 'ripiego') {
+        s.foto.forEach(function (f) { f.manuale = s.p.ordine; });
+        scelte[s.p.ordine] = s.scelta.id;
+        confermati[s.p.ordine] = true;
+        n++;
+      }
+    });
+    messaggio(n + ' abbinamenti confermati.');
+    ricalcola();
+  }
+  function ricavaScarto() {
+    var f = primoAbbinamentoManuale();
+    if (!f) return;
+    scarto = Math.round((punti[0].ora - oraOriginale(f)) / 1000);
+    $('scarto').value = scarto;
+    ricavato = true;
+    messaggio('Scarto ricavato: ' + (scarto > 0 ? '+' : '') + scarto + ' s (tocco del punto ' + punti[0].ordine + ' alle ' + oraHMS(punti[0].ora) + ', EXIF di ' + f.nome + ' alle ' + oraHMS(oraOriginale(f)) + '). Le proposte sono state riallineate.');
+    ricalcola();
+  }
+  function impostaScarto(v) {
+    var n = parseInt(v, 10);
+    if (isNaN(n)) return;
+    scarto = n;
+    ricalcola();
+  }
+
+  // ------------------------------------------------------------------
+  // Esportazione
+  // ------------------------------------------------------------------
+  function scene() {
+    if (!risultato) return [];
+    return risultato.schede.map(function (s) {
+      var p = s.p, f = s.scelta;
+      return {
+        ordine: p.ordine, tipo: p.tipo,
+        file_originale: f ? f.nome : null,
+        nuovo_nome: f ? nuovoNome(p) : null,
+        ora_tocco: p.oraIso,
+        ora_scatto: f ? isoLocale(oraCorretta(f)) : null,
+        ora_scatto_camera: f ? (f.exifTesto || isoLocale(oraOriginale(f))) : null,
+        nota: p.nota || '',
+        rifare: !!p.rifare,
+        stato: s.stato,
+        raffica: s.foto.map(function (x) { return x.nome; })
+      };
+    });
+  }
+  function scarica(nome, testo, tipo) {
+    try {
+      var blob = new Blob([testo], { type: tipo || 'text/plain' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nome;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      messaggio('Scaricato ' + nome + '.');
+    } catch (e) {
+      messaggio('Download di ' + nome + ' non riuscito: ' + e.message, true);
+    }
+  }
+  function avvisoNonConfermati() {
+    var n = risultato ? risultato.schede.filter(function (s) { return s.stato === 'proposta' || s.stato === 'ripiego'; }).length : 0;
+    return n ? ' Attenzione: ' + n + ' proposte non confermate sono incluse.' : '';
+  }
+  function esportaJson() {
+    var out = { chiesa: sessione ? sessione.chiesa : '', slug: sessione ? sessione.slug : '', scarto_sec: scarto, anticipo_tollerato_sec: margine, scene: scene(),
+      senza_punto: risultato ? risultato.senza.map(function (f) { return f.nome; }) : [], generato: new Date().toISOString() };
+    scarica('abbinamento.json', JSON.stringify(out, null, 2), 'application/json');
+    messaggio('Scaricato abbinamento.json.' + avvisoNonConfermati());
+  }
+  function righeRinomina() {
+    return scene().filter(function (s) { return s.file_originale; });
+  }
+  function esportaCsv() {
+    var righe = ['file_originale;nuovo_nome'];
+    righeRinomina().forEach(function (s) { righe.push(s.file_originale + ';' + s.nuovo_nome); });
+    scarica('rinomina.csv', righe.join('\r\n') + '\r\n', 'text/csv');
+  }
+  function esportaBat() {
+    var righe = ['@echo off', 'chcp 65001 >nul', 'cd /d "%~dp0"', 'echo Rinomino le foto di ' + (sessione ? sessione.chiesa : '') + ' ...'];
+    righeRinomina().forEach(function (s) { righe.push('if exist "' + s.file_originale + '" ren "' + s.file_originale + '" "' + s.nuovo_nome + '"'); });
+    righe.push('echo Fatto.', 'pause');
+    scarica('rinomina.bat', righe.join('\r\n') + '\r\n', 'application/octet-stream');
+  }
+  function esportaSh() {
+    var righe = ['#!/bin/sh', '# Rinomina le foto di ' + (sessione ? sessione.chiesa : '') + ' (esegui dentro la cartella delle foto)', 'cd "$(dirname "$0")" || exit 1'];
+    righeRinomina().forEach(function (s) { righe.push('[ -f "' + s.file_originale.replace(/"/g, '\\"') + '" ] && mv -n "' + s.file_originale.replace(/"/g, '\\"') + '" "' + s.nuovo_nome + '"'); });
+    righe.push('echo Fatto.');
+    scarica('rinomina.sh', righe.join('\n') + '\n', 'application/x-sh');
+  }
+
+  // ------------------------------------------------------------------
+  // Eventi
+  // ------------------------------------------------------------------
+  $('input-json').addEventListener('change', function () { if (this.files[0]) caricaSessioneDaFile(this.files[0]); this.value = ''; });
+  $('input-foto').addEventListener('change', function () { caricaFoto(this.files); this.value = ''; });
+  $('input-cartella').addEventListener('change', function () { caricaFoto(this.files); this.value = ''; });
+  $('scarto').addEventListener('change', function () { impostaScarto(this.value); });
+  $('scarto').addEventListener('input', function () { impostaScarto(this.value); });
+  $('margine').addEventListener('change', function () { var n = parseInt(this.value, 10); if (!isNaN(n) && n >= 0) { margine = n; ricalcola(); } });
+  $('btn-ricava').addEventListener('click', ricavaScarto);
+  $('btn-usa-suggerimento').addEventListener('click', function () { var v = parseInt(this.dataset.valore, 10); if (!isNaN(v)) { scarto = v; $('scarto').value = v; ricalcola(); } });
+  $('btn-accetta').addEventListener('click', accettaTutto);
+  $('btn-json').addEventListener('click', esportaJson);
+  $('btn-csv').addEventListener('click', esportaCsv);
+  $('btn-bat').addEventListener('click', esportaBat);
+  $('btn-sh').addEventListener('click', esportaSh);
+
+  // trascinamento di file sui pannelli dei passi
+  function zonaFile(id, gestisci) {
+    var z = $(id);
+    z.addEventListener('dragover', function (ev) { ev.preventDefault(); z.classList.add('trascina'); });
+    z.addEventListener('dragleave', function () { z.classList.remove('trascina'); });
+    z.addEventListener('drop', function (ev) { ev.preventDefault(); z.classList.remove('trascina'); if (ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) gestisci(ev.dataTransfer.files); });
+  }
+  zonaFile('passo-json', function (files) { caricaSessioneDaFile(files[0]); });
+  zonaFile('passo-foto', function (files) { caricaFoto(files); });
+  // un file trascinato fuori dalle zone non deve aprirsi nel browser
+  document.addEventListener('dragover', function (ev) { ev.preventDefault(); });
+  document.addEventListener('drop', function (ev) { ev.preventDefault(); });
+
+  // bersaglio "senza punto"
+  var bs = $('bersaglio-senza');
+  bs.addEventListener('dragover', function (ev) { ev.preventDefault(); bs.classList.add('sopra'); });
+  bs.addEventListener('dragleave', function () { bs.classList.remove('sopra'); });
+  bs.addEventListener('drop', function (ev) { ev.preventDefault(); bs.classList.remove('sopra'); var id = ev.dataTransfer.getData('text/plain'); if (id) togli(id); });
+  bs.addEventListener('click', function () { if (selezionata) { var id = selezionata; selezionata = null; togli(id); } });
+
+  // Stato leggibile dall'esterno (per i test e per chi vuole ispezionare)
+  window.abbinaStato = function () {
+    return {
+      scarto: scarto, margine: margine, punti: punti.length, scene: scene(),
+      foto: foto.map(function (f) { return { nome: f.nome, fonte: f.fonte, ora_exif: f.oraExif, ora_file: f.oraFile, punto: f.punto, stato: f.stato }; }),
+      senza_punto: risultato ? risultato.senza.map(function (f) { return f.nome; }) : []
+    };
+  };
+
+  disegna();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0f1419">
+<title>Contapunti – rilievo chiese</title>
+<style>
+  /* Pagina autonoma: nessun font o risorsa esterna, funziona da file:// e senza rete. */
+  :root {
+    --sfondo: #0f1419;
+    --pannello: #1a222c;
+    --pannello-2: #233040;
+    --testo: #f4f6f8;
+    --testo-2: #b8c2cc;
+    --bordo: #3a4a5c;
+    --accento: #ffb000;      /* giallo ambra: leggibile al sole e al buio */
+    --accento-testo: #1a1200;
+    --ok: #35c46a;
+    --errore: #ff5c5c;
+    --dev: #4fc3f7;          /* colore dei rami (deviazioni) */
+    --linea: #6b7c8f;
+  }
+  :root[data-tema="chiaro"] {
+    --sfondo: #f7f7f2;
+    --pannello: #ffffff;
+    --pannello-2: #ecece4;
+    --testo: #111417;
+    --testo-2: #4a5560;
+    --bordo: #c9cfd6;
+    --accento: #c77800;
+    --accento-testo: #ffffff;
+    --ok: #1d8f46;
+    --errore: #c62828;
+    --dev: #0277bd;
+    --linea: #7a8a9a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--sfondo);
+    color: var(--testo);
+    font: 18px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex; flex-direction: column;
+    height: 100dvh; min-height: 100vh;
+    overscroll-behavior: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  input, textarea, button { font: inherit; color: inherit; }
+  input, textarea { user-select: text; -webkit-user-select: text; }
+  .nascosto { display: none !important; }
+
+  /* ---------- schermata iniziale ---------- */
+  #schermata-inizio {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding: 24px 20px; gap: 16px;
+  }
+  #schermata-inizio h1 { font-size: 34px; margin: 0 0 4px; }
+  #schermata-inizio p { color: var(--testo-2); margin: 0; }
+  label.etichetta { display: block; font-size: 16px; color: var(--testo-2); margin-bottom: 6px; }
+  input.campo {
+    width: 100%; padding: 16px 14px; font-size: 22px; border-radius: 12px;
+    border: 2px solid var(--bordo); background: var(--pannello); color: var(--testo);
+  }
+  input.campo:focus { outline: none; border-color: var(--accento); }
+  .tasto {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 64px; padding: 12px 16px; border-radius: 16px; border: 2px solid var(--bordo);
+    background: var(--pannello-2); color: var(--testo); font-size: 20px; font-weight: 700;
+    cursor: pointer; width: 100%; text-align: center; line-height: 1.15;
+  }
+  .tasto:active { transform: scale(0.98); filter: brightness(1.15); }
+  .tasto:disabled { opacity: 0.4; cursor: default; transform: none; filter: none; }
+  .tasto.primario { background: var(--accento); color: var(--accento-testo); border-color: var(--accento); font-size: 24px; min-height: 76px; }
+  .tasto.pericolo { border-color: var(--errore); color: var(--errore); }
+  .tasto.piccolo { min-height: 48px; font-size: 17px; font-weight: 600; }
+
+  /* ---------- schermata rilievo ---------- */
+  #schermata-rilievo { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--pannello); border-bottom: 1px solid var(--bordo);
+  }
+  header .titolo { flex: 1; min-width: 0; }
+  header .titolo .nome { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .titolo .info { color: var(--testo-2); font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .tasto { width: auto; flex: 0 0 auto; padding: 8px 18px; min-height: 48px; }
+
+  #stato {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 14px; font-size: 16px; color: var(--testo-2); background: var(--pannello);
+  }
+  #stato .lane { font-weight: 700; color: var(--testo); }
+  #stato .lane.dev { color: var(--dev); }
+  #banner-errore { background: var(--errore); color: #fff; font-weight: 700; padding: 8px 14px; font-size: 16px; }
+
+  #area-schema { flex: 1; overflow: auto; min-height: 120px; padding: 6px 0 12px; }
+  #schema { display: block; width: 100%; height: auto; }
+  #schema text { font-family: inherit; }
+  #vuoto { padding: 28px 20px; color: var(--testo-2); text-align: center; }
+
+  #pannello-punto {
+    background: var(--pannello); border-top: 1px solid var(--bordo); padding: 8px 14px 6px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #pannello-punto .riga { display: flex; align-items: center; gap: 8px; }
+  #pannello-punto .numero {
+    background: var(--accento); color: var(--accento-testo); font-weight: 800; border-radius: 10px;
+    padding: 4px 10px; min-width: 52px; text-align: center;
+  }
+  #pannello-punto .descr { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pannello-punto input.campo { padding: 10px 12px; font-size: 18px; }
+  .tasto-mini {
+    min-height: 48px; padding: 6px 12px; border-radius: 12px; border: 2px solid var(--bordo);
+    background: var(--pannello-2); color: var(--testo); font-size: 16px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .tasto-mini.attivo { background: var(--errore); border-color: var(--errore); color: #fff; }
+  .tasto-mini.registra { border-color: var(--errore); color: var(--errore); }
+  #voce-stato { font-size: 16px; color: var(--testo-2); }
+  #voce-audio { height: 40px; width: 100%; }
+
+  #chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 14px; background: var(--pannello); scrollbar-width: none; }
+  #chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; min-height: 48px; padding: 8px 16px; border-radius: 999px; border: 2px solid var(--bordo);
+    background: var(--pannello-2); color: var(--testo); font-size: 17px; font-weight: 600; cursor: pointer;
+  }
+  .chip.attivo { background: var(--accento); color: var(--accento-testo); border-color: var(--accento); }
+
+  #barra {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--pannello); border-top: 1px solid var(--bordo);
+  }
+  #barra .tasto.primario { grid-column: 1 / -1; }
+
+  /* ---------- pannello Fine (sovrapposto) ---------- */
+  #pannello-fine {
+    position: fixed; inset: 0; background: var(--sfondo); z-index: 10;
+    display: flex; flex-direction: column; gap: 12px; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); overflow: auto;
+  }
+  #pannello-fine h2 { margin: 0 0 4px; font-size: 26px; }
+  #pannello-fine p { margin: 0; color: var(--testo-2); }
+  #conferma-azzera, #conferma-annulla {
+    border: 2px solid var(--errore); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .due { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #avviso { min-height: 24px; color: var(--ok); font-weight: 600; }
+  #avviso.err { color: var(--errore); }
+  textarea#json-manuale { width: 100%; min-height: 120px; border-radius: 10px; border: 2px solid var(--bordo); background: var(--pannello); color: var(--testo); font-size: 16px; padding: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ====================== SCHERMATA INIZIALE ====================== -->
+<section id="schermata-inizio">
+  <h1>Contapunti</h1>
+  <p>Rilievo dei punti 360 in chiesa. Tocca «Nuovo punto» quando piazzi il treppiede: l'ora del tocco serve poi ad abbinare gli scatti.</p>
+  <div>
+    <label class="etichetta" for="chiesa">Nome della chiesa</label>
+    <input class="campo" id="chiesa" type="text" placeholder="es. Chiesa del Purgatorio" autocomplete="off" enterkeyhint="done">
+  </div>
+  <button class="tasto primario" id="btn-inizia">Inizia il rilievo</button>
+  <p id="inizio-aiuto" style="font-size:16px"></p>
+</section>
+
+<!-- ====================== SCHERMATA RILIEVO ====================== -->
+<section id="schermata-rilievo" class="nascosto">
+  <header>
+    <div class="titolo">
+      <div class="nome" id="h-chiesa">—</div>
+      <div class="info"><span id="h-tempo">0 min</span> · <span id="h-punti">0 punti</span> · bussola <span id="h-bussola">n/d</span></div>
+    </div>
+    <button class="tasto piccolo" id="btn-fine" type="button">Fine</button>
+  </header>
+
+  <div id="stato">
+    <span class="lane" id="stato-lane">Cammino principale</span>
+    <span id="stato-prossimo">prossimo: 0</span>
+  </div>
+  <div id="banner-errore" class="nascosto" role="alert"></div>
+
+  <div id="area-schema">
+    <div id="vuoto">Nessun punto ancora. Scegli il tipo e tocca «Nuovo punto» quando piazzi il treppiede.</div>
+    <svg id="schema" xmlns="http://www.w3.org/2000/svg" class="nascosto" role="img" aria-label="Schema del cammino"></svg>
+  </div>
+
+  <div id="pannello-punto" class="nascosto">
+    <div class="riga">
+      <span class="numero" id="pp-numero">0</span>
+      <span class="descr" id="pp-descr">—</span>
+      <button class="tasto-mini" id="pp-rifare" type="button" aria-pressed="false">Rifare</button>
+    </div>
+    <div class="riga">
+      <input class="campo" id="pp-nota" type="text" placeholder="Nota (facoltativa)" autocomplete="off" enterkeyhint="done">
+      <button class="tasto-mini registra" id="pp-voce" type="button">Nota vocale</button>
+    </div>
+    <div class="riga" id="voce-riga">
+      <span id="voce-stato"></span>
+      <audio id="voce-audio" controls class="nascosto"></audio>
+      <button class="tasto-mini" id="voce-elimina" type="button">Elimina audio</button>
+    </div>
+  </div>
+
+  <div id="chips" role="radiogroup" aria-label="Tipo del punto"></div>
+
+  <div id="barra">
+    <button class="tasto primario" id="btn-nuovo" type="button">Nuovo punto</button>
+    <button class="tasto" id="btn-deviazione" type="button">Deviazione</button>
+    <button class="tasto" id="btn-torno" type="button" disabled>Torno al cammino</button>
+  </div>
+</section>
+
+<!-- ====================== PANNELLO FINE ====================== -->
+<section id="pannello-fine" class="nascosto">
+  <h2>Fine rilievo</h2>
+  <p id="fine-riassunto">—</p>
+  <div id="avviso" aria-live="polite"></div>
+  <button class="tasto primario" id="btn-scarica" type="button">Chiudi e scarica</button>
+  <button class="tasto" id="btn-copia" type="button">Copia negli appunti</button>
+  <textarea id="json-manuale" class="nascosto" readonly aria-label="JSON della sessione"></textarea>
+  <button class="tasto" id="btn-tema" type="button">Tema chiaro / scuro</button>
+  <button class="tasto" id="btn-annulla-ultimo" type="button">Annulla l'ultimo punto</button>
+  <div id="conferma-annulla" class="nascosto">
+    <div id="conferma-annulla-testo">Cancellare l'ultimo punto?</div>
+    <div class="due">
+      <button class="tasto pericolo" id="btn-annulla-si" type="button">Sì, cancella</button>
+      <button class="tasto" id="btn-annulla-no" type="button">No</button>
+    </div>
+  </div>
+  <button class="tasto pericolo" id="btn-nuovo-rilievo" type="button">Nuovo rilievo (azzera)</button>
+  <div id="conferma-azzera" class="nascosto">
+    <div>Cancellare tutti i punti di questo rilievo? Se non hai scaricato il JSON, li perdi.</div>
+    <div class="due">
+      <button class="tasto pericolo" id="btn-azzera-si" type="button">Sì, azzera</button>
+      <button class="tasto" id="btn-azzera-no" type="button">Annulla</button>
+    </div>
+  </div>
+  <button class="tasto" id="btn-chiudi-fine" type="button">Torna al rilievo</button>
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------
+  // Costanti e tipi di punto
+  // ------------------------------------------------------------------
+  var CHIAVE = 'rilievo_sessione';
+  var CHIAVE_CHIESA = 'rilievo_chiesa';
+  var CHIAVE_TEMA = 'rilievo_tema';
+  var MAX_VOCE_SEC = 60;
+  var TIPI = [
+    { id: 'sagrato',   nome: 'Sagrato / esterno',    abbr: 'sagr' },
+    { id: 'navata',    nome: 'Navata',               abbr: 'nav' },
+    { id: 'altare',    nome: 'Altare / presbiterio', abbr: 'alt' },
+    { id: 'cappella',  nome: 'Cappella',             abbr: 'capp' },
+    { id: 'transetto', nome: 'Transetto',            abbr: 'trans' },
+    { id: 'cripta',    nome: 'Cripta',               abbr: 'cripta' },
+    { id: 'altro',     nome: 'Altro',                abbr: 'altro' }
+  ];
+  function tipoInfo(id) {
+    for (var i = 0; i < TIPI.length; i++) if (TIPI[i].id === id) return TIPI[i];
+    return { id: id, nome: id, abbr: String(id).slice(0, 5) };
+  }
+
+  // ------------------------------------------------------------------
+  // Stato della sessione (salvato in localStorage a ogni tocco)
+  // ------------------------------------------------------------------
+  function sessioneVuota() {
+    return {
+      versione: 1,
+      chiesa: '',
+      slug: '',
+      inizio: null,
+      fine: null,
+      punti: [],
+      prossimo_principale: 0,   // prossimo ordine sul cammino principale
+      deviazioni: 0,            // deviazioni gia' usate (con almeno un punto)
+      deviazione_attiva: null,  // { base, prossimo, da_punto, n }
+      tipo_corrente: 'navata',
+      selezionato: null         // ordine del punto mostrato nel pannello note
+    };
+  }
+  var S = sessioneVuota();
+  var bussolaAttuale = null;    // ultimo valore della bussola (gradi) o null
+  var timerTempo = null;
+
+  function salva() {
+    try {
+      localStorage.setItem(CHIAVE, JSON.stringify(S));
+      $('banner-errore').classList.add('nascosto');
+      return true;
+    } catch (e) {
+      // memoria piena (di solito per troppe note vocali) o localStorage bloccato: i punti restano in pagina,
+      // ma vanno scaricati prima di chiudere il browser
+      $('banner-errore').textContent = 'Attenzione: il browser non salva più (memoria piena). Non chiudere la pagina: vai su «Fine» e scarica il JSON.';
+      $('banner-errore').classList.remove('nascosto');
+      mostraAvviso('Memoria del browser piena: ultimo dato non salvato', true);
+      return false;
+    }
+  }
+  function carica() {
+    try {
+      var raw = localStorage.getItem(CHIAVE);
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (!s || typeof s !== 'object' || !Array.isArray(s.punti)) return false;
+      S = s;
+      // campi aggiunti in versioni successive: valori di ripiego
+      if (typeof S.prossimo_principale !== 'number') S.prossimo_principale = 0;
+      if (typeof S.deviazioni !== 'number') S.deviazioni = 0;
+      if (!S.tipo_corrente) S.tipo_corrente = 'navata';
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function slugify(t) {
+    return String(t || '').toLowerCase()
+      .replace(/[àáâä]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
+      .replace(/[òóôö]/g, 'o').replace(/[ùúûü]/g, 'u')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'chiesa';
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function oraLocale(iso, conSecondi) {
+    var d = new Date(iso);
+    var t = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    return conSecondi ? t + ':' + pad2(d.getSeconds()) : t;
+  }
+  function dataLocale(iso) {
+    var d = new Date(iso);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  function $(id) { return document.getElementById(id); }
+
+  // ------------------------------------------------------------------
+  // Bussola (se disponibile; altrimenti resta null senza errori)
+  // ------------------------------------------------------------------
+  function suOrientamento(e) {
+    var h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+      h = e.webkitCompassHeading;                    // iOS: gia' rispetto al nord
+    } else if (typeof e.alpha === 'number' && !isNaN(e.alpha)) {
+      h = (360 - e.alpha) % 360;                     // Android: alpha e' antiorario
+    }
+    if (h !== null) {
+      bussolaAttuale = Math.round(h * 10) / 10;
+      $('h-bussola').textContent = Math.round(bussolaAttuale) + '°';
+    }
+  }
+  function attivaBussola() {
+    try {
+      if (!('DeviceOrientationEvent' in window)) return;
+      var avvia = function () {
+        if ('ondeviceorientationabsolute' in window) {
+          window.addEventListener('deviceorientationabsolute', suOrientamento, true);
+        }
+        window.addEventListener('deviceorientation', suOrientamento, true);
+      };
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iPhone: il permesso va chiesto da un tocco dell'utente (qui: «Inizia il rilievo»)
+        DeviceOrientationEvent.requestPermission().then(function (r) {
+          if (r === 'granted') avvia();
+        }).catch(function () { /* negato o non disponibile: bussola resta n/d */ });
+      } else {
+        avvia();
+      }
+    } catch (e) { /* nessuna bussola: va bene cosi' */ }
+  }
+
+  // ------------------------------------------------------------------
+  // Logica dei punti e della numerazione
+  // ------------------------------------------------------------------
+  function ultimoPrincipale() {
+    for (var i = S.punti.length - 1; i >= 0; i--) {
+      if (S.punti[i].da_punto === undefined) return S.punti[i];
+    }
+    return null;
+  }
+  function trovaPunto(ordine) {
+    for (var i = 0; i < S.punti.length; i++) if (S.punti[i].ordine === ordine) return S.punti[i];
+    return null;
+  }
+  function nuovoPunto() {
+    var p = {
+      ordine: 0,
+      tipo: S.tipo_corrente,
+      ora: new Date().toISOString(),
+      bussola: bussolaAttuale,
+      nota: '',
+      rifare: false
+    };
+    if (S.deviazione_attiva) {
+      var d = S.deviazione_attiva;
+      if (d.n === 0) S.deviazioni += 1;       // la deviazione "conta" solo dal primo punto
+      p.ordine = d.prossimo;
+      d.prossimo += 1;
+      d.n += 1;
+      if (d.da_punto !== null && d.da_punto !== undefined) p.da_punto = d.da_punto;
+      else p.da_punto = -1;                   // deviazione aperta prima di qualsiasi punto principale
+    } else {
+      p.ordine = S.prossimo_principale;
+      S.prossimo_principale += 1;
+    }
+    S.punti.push(p);
+    S.selezionato = p.ordine;
+    salva();
+    aggiorna(true);
+  }
+  function apriDeviazione() {
+    if (S.deviazione_attiva && S.deviazione_attiva.n === 0) {
+      mostraStatoLampo('Deviazione già aperta: tocca «Nuovo punto»');
+      return;
+    }
+    var up = ultimoPrincipale();
+    var base = (S.deviazioni + 1) * 100;
+    S.deviazione_attiva = { base: base, prossimo: base, da_punto: up ? up.ordine : null, n: 0 };
+    salva();
+    aggiorna(false);
+  }
+  function tornoAlCammino() {
+    if (!S.deviazione_attiva) return;
+    S.deviazione_attiva = null;
+    salva();
+    aggiorna(false);
+  }
+  // Cancella l'ultimo punto toccato per sbaglio e rimette a posto la numerazione
+  function annullaUltimo() {
+    if (!S.punti.length) return;
+    var p = S.punti.pop();
+    if (p.da_punto !== undefined) {
+      var base = Math.floor(p.ordine / 100) * 100;
+      var rimasti = S.punti.filter(function (q) { return q.da_punto !== undefined && Math.floor(q.ordine / 100) * 100 === base; }).length;
+      if (S.deviazione_attiva && S.deviazione_attiva.base === base) { S.deviazione_attiva.prossimo = p.ordine; S.deviazione_attiva.n = rimasti; }
+      if (rimasti === 0) S.deviazioni -= 1;   // la deviazione torna libera
+    } else {
+      S.prossimo_principale = p.ordine;
+      if (S.deviazione_attiva && S.deviazione_attiva.n === 0) S.deviazione_attiva = null;
+    }
+    S.selezionato = S.punti.length ? S.punti[S.punti.length - 1].ordine : null;
+    salva();
+  }
+
+  // ------------------------------------------------------------------
+  // Disegno dello schema (SVG verticale, fila principale al centro,
+  // deviazioni come rami a sinistra/destra alternati)
+  // ------------------------------------------------------------------
+  var LARGH = 360, RIGA = 80, SU = 44, X_MAIN = 180, X_DX = 300, X_SX = 60, R = 22;
+
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function disegnaSchema() {
+    var svg = $('schema');
+    var n = S.punti.length;
+    if (n === 0) {
+      svg.classList.add('nascosto');
+      $('vuoto').classList.remove('nascosto');
+      return;
+    }
+    $('vuoto').classList.add('nascosto');
+    svg.classList.remove('nascosto');
+
+    // posizione di ogni punto: una riga per punto in ordine cronologico
+    var pos = {};         // ordine -> {x, y}
+    var latoDev = {};     // base della deviazione -> 'dx' | 'sx'
+    var contaDev = 0;
+    var linee = '', nodi = '';
+    var yMainPrec = null; // y dell'ultimo punto principale
+    var ultimoDevBase = null, ultimoDevPos = null;
+
+    for (var i = 0; i < n; i++) {
+      var p = S.punti[i];
+      var y = SU + i * RIGA;
+      var x = X_MAIN;
+      var isDev = p.da_punto !== undefined;
+      if (isDev) {
+        var base = Math.floor(p.ordine / 100) * 100;
+        if (!(base in latoDev)) { latoDev[base] = (contaDev % 2 === 0) ? 'dx' : 'sx'; contaDev++; }
+        x = latoDev[base] === 'dx' ? X_DX : X_SX;
+        var dir = (x > X_MAIN) ? 1 : -1;   // +1 ramo a destra, -1 a sinistra
+        if (ultimoDevBase === base && ultimoDevPos) {
+          // continua il ramo
+          linee += '<line x1="' + x + '" y1="' + ultimoDevPos.y + '" x2="' + x + '" y2="' + y + '" class="ramo"/>';
+        } else {
+          // parte dal fianco del punto principale da cui nasce (se esiste), cosi' non copre l'etichetta
+          var da = pos[p.da_punto];
+          var x0 = da ? da.x : X_MAIN, y0 = da ? da.y : y - RIGA;
+          linee += '<path d="M' + (x0 + dir * R) + ' ' + y0 + ' C ' + (x0 + dir * 70) + ' ' + y0 + ', ' + (x - dir * 70) + ' ' + (y - 40) + ', ' + (x - dir * R) + ' ' + (y - 6) + '" class="ramo"/>';
+        }
+        ultimoDevBase = base; ultimoDevPos = { x: x, y: y, dir: dir };
+      } else {
+        if (yMainPrec !== null) {
+          linee += '<line x1="' + X_MAIN + '" y1="' + yMainPrec + '" x2="' + X_MAIN + '" y2="' + y + '" class="principale"/>';
+        }
+        if (ultimoDevPos) {
+          // ritorno al cammino: linea tratteggiata dal fianco dell'ultimo punto della deviazione
+          var d0 = ultimoDevPos.dir;
+          linee += '<path d="M' + (ultimoDevPos.x - d0 * R) + ' ' + ultimoDevPos.y + ' C ' + (ultimoDevPos.x - d0 * 70) + ' ' + ultimoDevPos.y + ', ' + (X_MAIN + d0 * 70) + ' ' + (y - 40) + ', ' + (X_MAIN + d0 * R) + ' ' + (y - 6) + '" class="ritorno"/>';
+          ultimoDevPos = null; ultimoDevBase = null;
+        }
+        yMainPrec = y;
+      }
+      pos[p.ordine] = { x: x, y: y };
+
+      var ultimo = (i === n - 1);
+      var sel = (p.ordine === S.selezionato);
+      var classi = 'nodo' + (isDev ? ' dev' : '') + (ultimo ? ' ultimo' : '') + (sel ? ' sel' : '') + (p.rifare ? ' rifare' : '');
+      var etichetta = tipoInfo(p.tipo).abbr + ' · ' + oraLocale(p.ora, false);
+      var segni = (p.nota ? '✎' : '') + (p.nota_vocale ? '♪' : '');
+      nodi += '<g class="' + classi + '" data-ordine="' + p.ordine + '" tabindex="0" role="button" aria-label="Punto ' + p.ordine + '">' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + R + '"/>' +
+        '<text x="' + x + '" y="' + (y + 6) + '" text-anchor="middle" class="num">' + esc(p.ordine) + '</text>' +
+        '<text x="' + x + '" y="' + (y + R + 18) + '" text-anchor="middle" class="eti">' + esc(etichetta) + '</text>' +
+        (segni ? '<text x="' + (x + R + 2) + '" y="' + (y - R + 6) + '" class="segni">' + esc(segni) + '</text>' : '') +
+        '</g>';
+    }
+    var h = SU + (n - 1) * RIGA + 60;
+    svg.setAttribute('viewBox', '0 0 ' + LARGH + ' ' + h);
+    svg.setAttribute('height', h);
+    svg.innerHTML =
+      '<style>' +
+      '.principale{stroke:var(--linea);stroke-width:4}' +
+      '.ramo{stroke:var(--dev);stroke-width:3;fill:none}' +
+      '.ritorno{stroke:var(--dev);stroke-width:2;fill:none;stroke-dasharray:6 6;opacity:.7}' +
+      '.nodo circle{fill:var(--pannello-2);stroke:var(--linea);stroke-width:3}' +
+      '.nodo.dev circle{stroke:var(--dev)}' +
+      '.nodo.ultimo circle{fill:var(--accento);stroke:var(--accento)}' +
+      '.nodo.ultimo .num{fill:var(--accento-testo)}' +
+      '.nodo.sel:not(.ultimo) circle{stroke:var(--accento);stroke-width:4}' +
+      '.nodo.rifare circle{stroke:var(--errore);stroke-width:4}' +
+      '.num{font-size:18px;font-weight:800;fill:var(--testo)}' +
+      '.eti{font-size:16px;fill:var(--testo-2);paint-order:stroke;stroke:var(--sfondo);stroke-width:6px;stroke-linejoin:round}' +
+      '.segni{font-size:16px;fill:var(--accento)}' +
+      '.nodo{cursor:pointer}' +
+      '</style>' + linee + nodi;
+  }
+
+  // ------------------------------------------------------------------
+  // Aggiornamento dell'interfaccia
+  // ------------------------------------------------------------------
+  function aggiornaTempo() {
+    if (!S.inizio) return;
+    var min = Math.floor((Date.now() - new Date(S.inizio).getTime()) / 60000);
+    $('h-tempo').textContent = 'da ' + min + ' min';
+  }
+  function aggiornaChips() {
+    var c = $('chips');
+    c.innerHTML = '';
+    TIPI.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (t.id === S.tipo_corrente ? ' attivo' : '');
+      b.textContent = t.nome;
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', t.id === S.tipo_corrente ? 'true' : 'false');
+      b.dataset.tipo = t.id;
+      b.addEventListener('click', function () {
+        S.tipo_corrente = t.id;
+        salva();
+        aggiornaChips();
+      });
+      c.appendChild(b);
+    });
+  }
+  function aggiornaPannelloPunto() {
+    var pp = $('pannello-punto');
+    var p = S.selezionato !== null ? trovaPunto(S.selezionato) : null;
+    if (!p) { pp.classList.add('nascosto'); return; }
+    pp.classList.remove('nascosto');
+    $('pp-numero').textContent = p.ordine;
+    $('pp-descr').textContent = tipoInfo(p.tipo).nome + ' · ' + oraLocale(p.ora, true) +
+      (p.bussola !== null && p.bussola !== undefined ? ' · ' + Math.round(p.bussola) + '°' : '') +
+      (p.da_punto !== undefined ? ' · dev. da ' + p.da_punto : '');
+    var rif = $('pp-rifare');
+    rif.classList.toggle('attivo', !!p.rifare);
+    rif.setAttribute('aria-pressed', p.rifare ? 'true' : 'false');
+    rif.textContent = p.rifare ? 'Da rifare ✓' : 'Rifare';
+    if ($('pp-nota').value !== (p.nota || '')) $('pp-nota').value = p.nota || '';
+    aggiornaVoce(p);
+  }
+  function aggiorna(scorri) {
+    $('h-chiesa').textContent = S.chiesa || '—';
+    $('h-punti').textContent = S.punti.length + (S.punti.length === 1 ? ' punto' : ' punti');
+    aggiornaTempo();
+    var lane = $('stato-lane');
+    if (S.deviazione_attiva) {
+      var d = S.deviazione_attiva;
+      lane.textContent = 'Deviazione ' + (d.base / 100) + (d.da_punto !== null && d.da_punto !== undefined ? ' (da punto ' + d.da_punto + ')' : '');
+      lane.classList.add('dev');
+      $('stato-prossimo').textContent = 'prossimo: ' + d.prossimo;
+    } else {
+      lane.textContent = 'Cammino principale';
+      lane.classList.remove('dev');
+      $('stato-prossimo').textContent = 'prossimo: ' + S.prossimo_principale;
+    }
+    $('btn-torno').disabled = !S.deviazione_attiva;
+    disegnaSchema();
+    aggiornaChips();
+    aggiornaPannelloPunto();
+    if (scorri) {
+      var area = $('area-schema');
+      area.scrollTop = area.scrollHeight;
+    }
+  }
+  var timerLampo = null;
+  function mostraStatoLampo(testo) {
+    $('stato-prossimo').textContent = testo;
+    clearTimeout(timerLampo);
+    timerLampo = setTimeout(function () { aggiorna(false); }, 1800);
+  }
+  function mostraAvviso(testo, errore) {
+    var a = $('avviso');
+    a.textContent = testo;
+    a.classList.toggle('err', !!errore);
+  }
+
+  // ------------------------------------------------------------------
+  // Nota vocale (MediaRecorder, se disponibile)
+  // ------------------------------------------------------------------
+  var supportoVoce = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+  var registratore = null, pezzi = [], flusso = null, timerVoce = null, inizioVoce = 0, ordineInRegistrazione = null;
+
+  function aggiornaVoce(p) {
+    var btn = $('pp-voce'), stato = $('voce-stato'), audio = $('voce-audio'), del = $('voce-elimina');
+    if (!supportoVoce) {
+      btn.classList.add('nascosto');
+      stato.textContent = 'Nota vocale non disponibile su questo browser';
+      audio.classList.add('nascosto'); del.classList.add('nascosto');
+      return;
+    }
+    btn.classList.remove('nascosto');
+    if (registratore && registratore.state === 'recording') {
+      btn.textContent = 'Stop';
+      btn.classList.add('attivo');
+      return;
+    }
+    btn.textContent = 'Nota vocale';
+    btn.classList.remove('attivo');
+    if (p.nota_vocale) {
+      stato.textContent = 'Audio salvato' + (p.nota_vocale_sec ? ' (' + p.nota_vocale_sec + ' s)' : '');
+      audio.src = p.nota_vocale;
+      audio.classList.remove('nascosto');
+      del.classList.remove('nascosto');
+    } else {
+      stato.textContent = '';
+      audio.removeAttribute('src');
+      audio.classList.add('nascosto');
+      del.classList.add('nascosto');
+    }
+  }
+  function avviaRegistrazione() {
+    var p = trovaPunto(S.selezionato);
+    if (!p) return;
+    ordineInRegistrazione = p.ordine;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+      flusso = st;
+      var mime = '';
+      var candidati = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg'];
+      for (var i = 0; i < candidati.length; i++) {
+        try { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(candidati[i])) { mime = candidati[i]; break; } } catch (e) { /* ignora */ }
+      }
+      try {
+        registratore = mime ? new MediaRecorder(st, { mimeType: mime }) : new MediaRecorder(st);
+      } catch (e) {
+        registratore = new MediaRecorder(st);
+      }
+      pezzi = [];
+      registratore.ondataavailable = function (ev) { if (ev.data && ev.data.size > 0) pezzi.push(ev.data); };
+      registratore.onstop = fineRegistrazione;
+      registratore.start();
+      inizioVoce = Date.now();
+      $('voce-stato').textContent = 'Registro… 0 s';
+      timerVoce = setInterval(function () {
+        var s = Math.floor((Date.now() - inizioVoce) / 1000);
+        $('voce-stato').textContent = 'Registro… ' + s + ' s (max ' + MAX_VOCE_SEC + ')';
+        if (s >= MAX_VOCE_SEC) fermaRegistrazione();
+      }, 500);
+      aggiornaPannelloPunto();
+    }).catch(function () {
+      $('voce-stato').textContent = 'Microfono non disponibile o permesso negato';
+      ordineInRegistrazione = null;
+    });
+  }
+  function fermaRegistrazione() {
+    clearInterval(timerVoce);
+    try { if (registratore && registratore.state === 'recording') registratore.stop(); } catch (e) { /* ignora */ }
+  }
+  function fineRegistrazione() {
+    clearInterval(timerVoce);
+    var durata = Math.round((Date.now() - inizioVoce) / 1000);
+    var tipo = (registratore && registratore.mimeType) || (pezzi[0] && pezzi[0].type) || 'audio/webm';
+    var blob = new Blob(pezzi, { type: tipo });
+    if (flusso) { flusso.getTracks().forEach(function (t) { t.stop(); }); flusso = null; }
+    var ordine = ordineInRegistrazione;
+    registratore = null;
+    var lettore = new FileReader();
+    lettore.onload = function () {
+      var p = trovaPunto(ordine);
+      if (p) {
+        var precedente = p.nota_vocale;
+        p.nota_vocale = String(lettore.result);   // data URL base64 (es. data:audio/webm;codecs=opus;base64,...)
+        p.nota_vocale_sec = durata;
+        if (!salva()) { p.nota_vocale = precedente; salva(); $('voce-stato').textContent = 'Memoria piena: nota vocale NON salvata'; }
+      }
+      aggiorna(false);
+    };
+    lettore.onerror = function () { aggiorna(false); };
+    if (blob.size > 0) lettore.readAsDataURL(blob); else aggiorna(false);
+  }
+
+  // ------------------------------------------------------------------
+  // Esportazione
+  // ------------------------------------------------------------------
+  function jsonSessione() {
+    var punti = S.punti.map(function (p) {
+      var o = { ordine: p.ordine, tipo: p.tipo, ora: p.ora, bussola: (p.bussola === undefined ? null : p.bussola), nota: p.nota || '', rifare: !!p.rifare };
+      if (p.nota_vocale) { o.nota_vocale = p.nota_vocale; o.nota_vocale_sec = p.nota_vocale_sec || null; }
+      if (p.da_punto !== undefined) o.da_punto = p.da_punto;
+      return o;
+    });
+    return { chiesa: S.chiesa, slug: S.slug, inizio: S.inizio, fine: S.fine, punti: punti, versione: 1 };
+  }
+  function nomeFile() {
+    return 'rilievo-' + S.slug + '-' + dataLocale(S.inizio || new Date().toISOString()) + '.json';
+  }
+  function chiudiEScarica() {
+    S.fine = new Date().toISOString();
+    salva();
+    var testo = JSON.stringify(jsonSessione(), null, 2);
+    try {
+      var blob = new Blob([testo], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nomeFile();
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      mostraAvviso('Scaricato ' + nomeFile(), false);
+    } catch (e) {
+      $('json-manuale').value = testo;
+      $('json-manuale').classList.remove('nascosto');
+      mostraAvviso('Download non riuscito: copia il testo qui sotto', true);
+    }
+    aggiornaRiassuntoFine();
+  }
+  function copiaAppunti() {
+    var testo = JSON.stringify(jsonSessione(), null, 2);
+    var fallback = function () {
+      var ta = $('json-manuale');
+      ta.value = testo; ta.classList.remove('nascosto');
+      try { ta.focus(); ta.select(); var ok = document.execCommand && document.execCommand('copy'); mostraAvviso(ok ? 'Copiato negli appunti' : 'Seleziona e copia il testo qui sotto', !ok); }
+      catch (e) { mostraAvviso('Seleziona e copia il testo qui sotto', true); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(testo).then(function () { mostraAvviso('Copiato negli appunti (' + S.punti.length + ' punti)', false); }, fallback);
+    } else fallback();
+  }
+  function aggiornaRiassuntoFine() {
+    var dev = {};
+    S.punti.forEach(function (p) { if (p.da_punto !== undefined) dev[Math.floor(p.ordine / 100)] = true; });
+    $('fine-riassunto').textContent = S.chiesa + ' · ' + S.punti.length + ' punti · ' + Object.keys(dev).length + ' deviazioni' +
+      (S.inizio ? ' · inizio ' + oraLocale(S.inizio, true) : '') + (S.fine ? ' · chiuso ' + oraLocale(S.fine, true) : '');
+  }
+
+  // ------------------------------------------------------------------
+  // Tema
+  // ------------------------------------------------------------------
+  function applicaTema() {
+    var t = null;
+    try { t = localStorage.getItem(CHIAVE_TEMA); } catch (e) { /* ignora */ }
+    if (t === 'chiaro') document.documentElement.setAttribute('data-tema', 'chiaro');
+    else document.documentElement.removeAttribute('data-tema');
+  }
+  function cambiaTema() {
+    var chiaro = document.documentElement.getAttribute('data-tema') === 'chiaro';
+    try { localStorage.setItem(CHIAVE_TEMA, chiaro ? 'scuro' : 'chiaro'); } catch (e) { /* ignora */ }
+    applicaTema();
+  }
+
+  // ------------------------------------------------------------------
+  // Schermate
+  // ------------------------------------------------------------------
+  function mostraInizio() {
+    $('schermata-inizio').classList.remove('nascosto');
+    $('schermata-rilievo').classList.add('nascosto');
+    $('pannello-fine').classList.add('nascosto');
+    var nome = '';
+    try { nome = localStorage.getItem(CHIAVE_CHIESA) || ''; } catch (e) { /* ignora */ }
+    $('chiesa').value = nome;
+    $('inizio-aiuto').textContent = nome ? 'Ultima chiesa: ' + nome : '';
+    clearInterval(timerTempo);
+  }
+  function mostraRilievo() {
+    $('schermata-inizio').classList.add('nascosto');
+    $('schermata-rilievo').classList.remove('nascosto');
+    $('pannello-fine').classList.add('nascosto');
+    aggiorna(true);
+    clearInterval(timerTempo);
+    timerTempo = setInterval(aggiornaTempo, 1000);
+  }
+  function inizia() {
+    var nome = $('chiesa').value.trim();
+    if (!nome) {
+      $('inizio-aiuto').textContent = 'Scrivi prima il nome della chiesa.';
+      $('chiesa').focus();
+      return;
+    }
+    try { localStorage.setItem(CHIAVE_CHIESA, nome); } catch (e) { /* ignora */ }
+    S = sessioneVuota();
+    S.chiesa = nome;
+    S.slug = slugify(nome);
+    S.inizio = new Date().toISOString();
+    salva();
+    attivaBussola();   // da un tocco dell'utente: su iPhone serve per il permesso
+    mostraRilievo();
+  }
+  function azzera() {
+    S = sessioneVuota();
+    try { localStorage.removeItem(CHIAVE); } catch (e) { /* ignora */ }
+    $('conferma-azzera').classList.add('nascosto');
+    $('json-manuale').classList.add('nascosto');
+    mostraAvviso('', false);
+    mostraInizio();
+  }
+
+  // ------------------------------------------------------------------
+  // Collegamento eventi
+  // ------------------------------------------------------------------
+  $('btn-inizia').addEventListener('click', inizia);
+  $('chiesa').addEventListener('keydown', function (e) { if (e.key === 'Enter') inizia(); });
+  $('btn-nuovo').addEventListener('click', nuovoPunto);
+  $('btn-deviazione').addEventListener('click', apriDeviazione);
+  $('btn-torno').addEventListener('click', tornoAlCammino);
+  $('pp-rifare').addEventListener('click', function () {
+    var p = trovaPunto(S.selezionato); if (!p) return;
+    p.rifare = !p.rifare; salva(); aggiorna(false);
+  });
+  $('pp-nota').addEventListener('input', function () {
+    var p = trovaPunto(S.selezionato); if (!p) return;
+    p.nota = $('pp-nota').value; salva(); disegnaSchema();
+  });
+  $('pp-voce').addEventListener('click', function () {
+    if (registratore && registratore.state === 'recording') fermaRegistrazione(); else avviaRegistrazione();
+  });
+  $('voce-elimina').addEventListener('click', function () {
+    var p = trovaPunto(S.selezionato); if (!p) return;
+    delete p.nota_vocale; delete p.nota_vocale_sec; salva(); aggiorna(false);
+  });
+  $('schema').addEventListener('click', function (e) {
+    var g = e.target.closest ? e.target.closest('g.nodo') : null;
+    if (!g) return;
+    S.selezionato = parseInt(g.getAttribute('data-ordine'), 10);
+    salva(); aggiorna(false);
+  });
+  $('btn-fine').addEventListener('click', function () {
+    aggiornaRiassuntoFine();
+    mostraAvviso('', false);
+    $('conferma-azzera').classList.add('nascosto');
+    $('conferma-annulla').classList.add('nascosto');
+    $('pannello-fine').classList.remove('nascosto');
+  });
+  $('btn-chiudi-fine').addEventListener('click', function () { $('pannello-fine').classList.add('nascosto'); });
+  $('btn-scarica').addEventListener('click', chiudiEScarica);
+  $('btn-copia').addEventListener('click', copiaAppunti);
+  $('btn-tema').addEventListener('click', cambiaTema);
+  $('btn-annulla-ultimo').addEventListener('click', function () {
+    if (!S.punti.length) { mostraAvviso('Non ci sono punti da cancellare', true); return; }
+    var u = S.punti[S.punti.length - 1];
+    $('conferma-annulla-testo').textContent = 'Cancellare l\'ultimo punto, il ' + u.ordine + ' (' + tipoInfo(u.tipo).nome + ' delle ' + oraLocale(u.ora, true) + ')?';
+    $('conferma-annulla').classList.remove('nascosto');
+  });
+  $('btn-annulla-no').addEventListener('click', function () { $('conferma-annulla').classList.add('nascosto'); });
+  $('btn-annulla-si').addEventListener('click', function () {
+    var u = S.punti.length ? S.punti[S.punti.length - 1].ordine : null;
+    annullaUltimo();
+    $('conferma-annulla').classList.add('nascosto');
+    mostraAvviso(u === null ? '' : 'Punto ' + u + ' cancellato', false);
+    aggiornaRiassuntoFine();
+    aggiorna(true);
+  });
+  $('btn-nuovo-rilievo').addEventListener('click', function () { $('conferma-azzera').classList.remove('nascosto'); });
+  $('btn-azzera-no').addEventListener('click', function () { $('conferma-azzera').classList.add('nascosto'); });
+  $('btn-azzera-si').addEventListener('click', azzera);
+
+  // ------------------------------------------------------------------
+  // Avvio: riprende la sessione salvata se esiste
+  // ------------------------------------------------------------------
+  applicaTema();
+  if (carica() && S.inizio) {
+    mostraRilievo();
+    attivaBussola();   // senza tocco: su iPhone restera' n/d finche' non si riavvia il rilievo
+  } else {
+    mostraInizio();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+RILIEVO CHIESE – Contapunti + Abbina (Esplora Trapani, ottobre 2026)
+COS'È: due pagine HTML autonome (nessun server, nessuna rete, niente da installare) per collegare gli scatti 360 della Insta360 X6
+ai punti in cui hai piazzato il treppiede. L'ancora è il TEMPO: il telefono registra l'ora del tocco, la camera l'ora dello scatto (EXIF).
+FILE: rilievo-sim1.html (telefono, in chiesa) · abbina-sim1.html (PC, a casa) · genera_sessione_finta.py (dati di prova in finta/) · test.js (test).
+SUL POSTO (rilievo-sim1.html): aprila sul telefono PRIMA di entrare (da file o da un indirizzo web) e non ricaricarla dove non c'è campo.
+ 1. Scrivi il nome della chiesa e tocca «Inizia il rilievo». 2. Scegli il tipo (sagrato, navata, altare…): resta selezionato finché non lo cambi.
+ 3. Quando piazzi il treppiede tocca «Nuovo punto», poi imposta il timer, allontanati e scatta (anche 2-3 volte: le raffiche si risolvono dopo).
+ 4. Per una cappella o una zona laterale tocca «Deviazione» (numeri 100, 101…; la seconda 200…), poi «Torno al cammino» per riprendere 4, 5, 6…
+ 5. Nota di testo, «Nota vocale» (max 60 s) e «Rifare» valgono per il punto evidenziato (tocca un cerchio nello schema per sceglierne un altro).
+ 6. Alla fine: «Fine» → «Chiudi e scarica» (rilievo-<chiesa>-<data>.json) o «Copia negli appunti». «Annulla l'ultimo punto» corregge un tocco sbagliato.
+ Ogni tocco è salvato subito nel browser: se la pagina si chiude, riaprendola riprendi da dove eri. «Nuovo rilievo» azzera (chiede conferma).
+A CASA (abbina-sim1.html): 1. carica il JSON del telefono; 2. carica le foto JPEG (o la cartella); 3. trascina la prima foto vera sul punto 0 e
+ premi «Ricava dal primo abbinamento»: lo scarto fra gli orologi viene calcolato e tutte le proposte si riallineano (c'è anche un suggerimento
+ automatico, che però sbaglia se la prima foto è una prova). Controlla: giallo = manca lo scatto; «Senza punto» = foto fuori da ogni intervallo;
+ nelle raffiche è scelto l'ultimo scatto (clic su un altro per cambiare). Correggi trascinando (o clic sulla foto e poi sul punto), «Accetta tutto»,
+ poi scarica abbinamento.json, rinomina.csv, rinomina.bat (Windows: mettilo nella cartella delle foto e doppio clic) o rinomina.sh (Mac/Linux).
+TESTATO (test.js, Chromium headless, 91 controlli passati): numerazione 0-3/100-101/4-5/200/6 e 300-500, ripresa dopo ricarica, JSON scaricato,
+ copia negli appunti, conferme inline, nota vocale con microfono finto, browser senza MediaRecorder o con microfono negato, memoria piena,
+ tasti ≥64 px e testi ≥16 px; Abbina: EXIF (byte order II e MM, ripiego su DateTime IFD0, foto senza EXIF = «ora dal file»), suggerimento,
+ ricava scarto (−165 s), raffiche, 101 mancante, foto pre-inizio senza punto, drag&drop e tocco, export JSON/CSV/BAT/SH uguali ad ATTESO.json.
+NON TESTATO: telefoni veri (iPhone/Android), bussola reale, Safari, foto vere della X6 (solo JPEG finti 2048×1024), file .insp.
+LIMITI: bussola su iPhone solo via HTTPS e dopo il permesso (altrimenti null); nota vocale dipende dal browser (formato webm/opus su Android,
+ mp4 su iPhone) e riempie la memoria del browser (~5 MB: con molte note il salvataggio può fallire, la pagina avvisa: scarica subito il JSON);
+ l'EXIF è letto solo dai JPEG; lo scarto allinea la prima foto al primo tocco, perciò «anticipo tollerato» (30 s) assorbe ritardi diversi fra
+ tocco e scatto; i file extra non JPEG vengono ignorati; la pagina non è una PWA: senza rete va aperta prima e non ricaricata.
