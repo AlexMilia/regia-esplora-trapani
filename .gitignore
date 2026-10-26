@@ -1,0 +1,31 @@
+# ─── Chiavi e configurazioni: MAI in repo ────────────────────────────
+poi_api.php
+config.php
+chiavi.php
+*.env
+.env*
+*secret*
+*token*
+credenziali*
+
+# ─── Media pesanti: vivono su Backblaze B2 ───────────────────────────
+*.mp4
+*.mov
+*.insp
+*.insv
+*.wav
+*.zip
+*.rar
+/media/
+/panorami/
+
+# ─── Sistema ─────────────────────────────────────────────────────────
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+.idea/
