@@ -1,0 +1,92 @@
+{
+  "chiesa": "Chiesa del Purgatorio",
+  "slug": "chiesa-del-purgatorio",
+  "inizio": "2026-10-14T07:30:00.000Z",
+  "fine": "2026-10-14T07:59:20.000Z",
+  "punti": [
+    {
+      "ordine": 0,
+      "tipo": "sagrato",
+      "ora": "2026-10-14T07:30:40.000Z",
+      "bussola": 182.0,
+      "nota": "Facciata, portale barocco",
+      "rifare": false
+    },
+    {
+      "ordine": 1,
+      "tipo": "navata",
+      "ora": "2026-10-14T07:33:30.000Z",
+      "bussola": 95.5,
+      "nota": "",
+      "rifare": false
+    },
+    {
+      "ordine": 2,
+      "tipo": "navata",
+      "ora": "2026-10-14T07:36:10.000Z",
+      "bussola": 93.0,
+      "nota": "",
+      "rifare": false
+    },
+    {
+      "ordine": 3,
+      "tipo": "altare",
+      "ora": "2026-10-14T07:39:20.000Z",
+      "bussola": 90.0,
+      "nota": "Altare maggiore, luce dalla cupola",
+      "rifare": false
+    },
+    {
+      "ordine": 100,
+      "tipo": "cappella",
+      "ora": "2026-10-14T07:41:40.000Z",
+      "bussola": 12.0,
+      "nota": "Cappella laterale sinistra, ex voto",
+      "rifare": false,
+      "da_punto": 3
+    },
+    {
+      "ordine": 101,
+      "tipo": "cappella",
+      "ora": "2026-10-14T07:44:00.000Z",
+      "bussola": 20.5,
+      "nota": "",
+      "rifare": false,
+      "da_punto": 3
+    },
+    {
+      "ordine": 4,
+      "tipo": "transetto",
+      "ora": "2026-10-14T07:47:30.000Z",
+      "bussola": 270.0,
+      "nota": "",
+      "rifare": false
+    },
+    {
+      "ordine": 5,
+      "tipo": "navata",
+      "ora": "2026-10-14T07:49:40.000Z",
+      "bussola": 92.0,
+      "nota": "",
+      "rifare": false
+    },
+    {
+      "ordine": 200,
+      "tipo": "cripta",
+      "ora": "2026-10-14T07:53:30.000Z",
+      "bussola": 180.0,
+      "nota": "Cripta, scale strette: attenzione al treppiede",
+      "rifare": false,
+      "da_punto": 5
+    },
+    {
+      "ordine": 6,
+      "tipo": "sagrato",
+      "ora": "2026-10-14T07:56:20.000Z",
+      "bussola": 2.0,
+      "nota": "",
+      "rifare": false
+    }
+  ],
+  "versione": 1
+}

@@ -1,0 +1,108 @@
+{
+  "chiesa": "Chiesa del Purgatorio",
+  "slug": "chiesa-del-purgatorio",
+  "sessione_json": "rilievo-chiesa-del-purgatorio-2026-10-14.json",
+  "scarto_camera_sec": 133,
+  "scarto_sec_atteso": -165,
+  "prima_foto_punto_0": "IMG_20261014_093325_00_002.jpg",
+  "scene": [
+    {
+      "ordine": 0,
+      "tipo": "sagrato",
+      "file_originale": "IMG_20261014_093325_00_002.jpg",
+      "nuovo_nome": "000-sagrato.jpg",
+      "raffica": [
+        "IMG_20261014_093325_00_002.jpg"
+      ]
+    },
+    {
+      "ordine": 1,
+      "tipo": "navata",
+      "file_originale": "IMG_20261014_093623_00_003.jpg",
+      "nuovo_nome": "001-navata.jpg",
+      "raffica": [
+        "IMG_20261014_093623_00_003.jpg"
+      ]
+    },
+    {
+      "ordine": 2,
+      "tipo": "navata",
+      "file_originale": "IMG_20261014_093938_00_006.jpg",
+      "nuovo_nome": "002-navata.jpg",
+      "raffica": [
+        "IMG_20261014_093901_00_004.jpg",
+        "IMG_20261014_093919_00_005.jpg",
+        "IMG_20261014_093938_00_006.jpg"
+      ]
+    },
+    {
+      "ordine": 3,
+      "tipo": "altare",
+      "file_originale": "IMG_20261014_094218_00_007.jpg",
+      "nuovo_nome": "003-altare.jpg",
+      "raffica": [
+        "IMG_20261014_094218_00_007.jpg"
+      ]
+    },
+    {
+      "ordine": 100,
+      "tipo": "cappella",
+      "file_originale": "IMG_20261014_094452_00_009.jpg",
+      "nuovo_nome": "100-cappella.jpg",
+      "raffica": [
+        "IMG_20261014_094428_00_008.jpg",
+        "IMG_20261014_094452_00_009.jpg"
+      ]
+    },
+    {
+      "ordine": 101,
+      "tipo": "cappella",
+      "file_originale": null,
+      "nuovo_nome": null,
+      "raffica": []
+    },
+    {
+      "ordine": 4,
+      "tipo": "transetto",
+      "file_originale": "IMG_20261014_095033_00_010.jpg",
+      "nuovo_nome": "004-transetto.jpg",
+      "raffica": [
+        "IMG_20261014_095033_00_010.jpg"
+      ]
+    },
+    {
+      "ordine": 5,
+      "tipo": "navata",
+      "file_originale": "IMG_20261014_095235_00_011.jpg",
+      "nuovo_nome": "005-navata.jpg",
+      "raffica": [
+        "IMG_20261014_095235_00_011.jpg"
+      ]
+    },
+    {
+      "ordine": 200,
+      "tipo": "cripta",
+      "file_originale": "IMG_20261014_095638_00_012.jpg",
+      "nuovo_nome": "200-cripta.jpg",
+      "raffica": [
+        "IMG_20261014_095638_00_012.jpg"
+      ]
+    },
+    {
+      "ordine": 6,
+      "tipo": "sagrato",
+      "file_originale": "IMG_20261014_095909_00_013.jpg",
+      "nuovo_nome": "006-sagrato.jpg",
+      "raffica": [
+        "IMG_20261014_095909_00_013.jpg"
+      ]
+    }
+  ],
+  "mancanti": [
+    101
+  ],
+  "senza_punto": [
+    "IMG_20261014_092813_00_001.jpg"
+  ],
+  "totale_foto": 13
+}
