@@ -1,0 +1,454 @@
+<title>Rilievo sul campo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pietra:#FBFAF7; --carta:#fff; --velo:#F4F2EC;
+  --inch:#14181E; --testo:#1B2027; --smorto:#6D7078;
+  --linea:#E4E1D9; --linea2:#CAC6BB;
+  --oro:#B8893A; --oro-t:#8A6520;
+  --verde:#3C7A4E; --fen:#C0426F; --mare:#2B7A8C;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pietra:#12151A; --carta:#171B21; --velo:#1C2129;
+    --inch:#F2F0EA; --testo:#E6E3DB; --smorto:#9BA0A8;
+    --linea:#272C34; --linea2:#39404A;
+    --oro:#D9A85A; --oro-t:#E8C98C;
+    --verde:#6FBE86; --fen:#F2789F; --mare:#63BBCE;
+  }
+}
+:root[data-theme="dark"]{
+  --pietra:#12151A; --carta:#171B21; --velo:#1C2129;
+  --inch:#F2F0EA; --testo:#E6E3DB; --smorto:#9BA0A8;
+  --linea:#272C34; --linea2:#39404A;
+  --oro:#D9A85A; --oro-t:#E8C98C;
+  --verde:#6FBE86; --fen:#F2789F; --mare:#63BBCE;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pietra);color:var(--testo);
+  font:400 16.5px/1.65 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+.foglio{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:0 90px}
+h1,h2,h3{font-family:Fraunces,Georgia,"Times New Roman",serif;margin:0;text-wrap:balance;color:var(--inch)}
+p{margin:0}
+code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;font-size:.87em;background:var(--velo);
+  border:1px solid var(--linea);border-radius:5px;padding:1px 5px;color:var(--oro-t)}
+.capo{padding-block:56px 34px;border-bottom:1px solid var(--linea)}
+.occhio{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--smorto);margin-bottom:16px}
+.capo h1{font-size:clamp(34px,7vw,54px);font-weight:600;line-height:1.02;letter-spacing:-.02em}
+.capo .somm{font-size:19px;line-height:1.55;color:var(--smorto);max-width:60ch;margin-top:18px}
+section{padding-block:40px;border-bottom:1px solid var(--linea);display:flex;flex-direction:column;gap:18px}
+section:last-of-type{border-bottom:0}
+h2{font-size:clamp(25px,4.4vw,33px);font-weight:600;line-height:1.14;letter-spacing:-.015em}
+h2 .n{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:400;color:var(--oro);
+  display:block;letter-spacing:.12em;margin-bottom:9px}
+h3{font-size:19px;font-weight:600}
+section p{max-width:66ch}
+.nota{border-left:2px solid var(--oro);padding:4px 0 4px 18px;color:var(--smorto);font-size:15.5px;max-width:62ch}
+.nota b{color:var(--inch);font-weight:600}
+.riq{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:20px 22px;
+  display:flex;flex-direction:column;gap:14px}
+.riq svg{display:block;width:100%;height:auto}
+.legenda{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;color:var(--smorto);
+  border-top:1px solid var(--linea);padding-top:14px}
+.legenda span{display:inline-flex;align-items:center;gap:8px}
+.pt{width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.pt.oro{background:var(--oro)} .pt.gr{background:var(--linea2)} .pt.fen{background:var(--fen)}
+ol.passi{list-style:none;counter-reset:p;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+ol.passi li{counter-increment:p;display:grid;grid-template-columns:34px 1fr;gap:14px;
+  padding:14px 0;border-bottom:1px solid var(--linea);align-items:start}
+ol.passi li:last-child{border-bottom:0}
+ol.passi li::before{content:counter(p);font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--oro);padding-top:3px}
+ol.passi b{display:block;font-weight:600;color:var(--inch)}
+ol.passi span{color:var(--smorto);font-size:15px}
+.tre{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:720px){ .tre{grid-template-columns:1fr} }
+.sch{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:16px 18px;
+  display:flex;flex-direction:column;gap:8px}
+.sch .dove{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--oro)}
+.sch h3{font-size:18px}
+.sch p{font-size:14.5px;color:var(--smorto);line-height:1.5}
+.tel{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:26px;align-items:start}
+@media (max-width:720px){ .tel{grid-template-columns:1fr} }
+.schermo{background:var(--inch);border-radius:26px;padding:12px;border:1px solid var(--linea2)}
+.schermo .dentro{background:var(--pietra);border-radius:16px;overflow:hidden;font-size:13px;color:var(--testo)}
+.schermo .barra{background:var(--carta);border-bottom:1px solid var(--linea);padding:10px 14px;display:flex;
+  justify-content:space-between;align-items:center;font-size:12px;color:var(--smorto)}
+.schermo .barra b{color:var(--inch);font-size:13px}
+.schermo .pianta{height:140px;background:var(--velo);position:relative;border-bottom:1px solid var(--linea)}
+.schermo .pin{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--carta);border:2px solid var(--linea2);
+  font:500 10px/18px "JetBrains Mono",monospace;text-align:center;color:var(--smorto);transform:translate(-50%,-50%)}
+.schermo .pin.fatto{background:var(--verde);border-color:var(--verde);color:#fff}
+.schermo .pin.qui{background:var(--oro);border-color:var(--oro);color:#fff;box-shadow:0 0 0 5px rgba(184,137,58,.28)}
+.schermo .lista{padding:8px 12px;display:flex;flex-direction:column;gap:5px}
+.schermo .voce{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;background:var(--carta);border:1px solid var(--linea)}
+.schermo .voce b{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--smorto);min-width:24px}
+.schermo .voce.fatto{opacity:.55} .schermo .voce.fatto b{color:var(--verde)}
+.schermo .voce.qui{border-color:var(--oro);background:rgba(184,137,58,.08)}
+.schermo .voce .t{flex:1;font-weight:500}
+.schermo .voce .h{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--smorto)}
+.schermo .grande{margin:8px 12px 14px;background:var(--oro);color:#fff;border-radius:12px;padding:16px;text-align:center;
+  font-weight:600;font-size:15px}
+.schermo .grande small{display:block;font-weight:400;font-size:11.5px;opacity:.85;margin-top:2px}
+.tel ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:9px;font-size:15px;color:var(--smorto)}
+.tel ul b{color:var(--inch);font-weight:600}
+.tab{overflow-x:auto;border:1px solid var(--linea);border-radius:var(--r);background:var(--carta)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--linea);vertical-align:top}
+th{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--smorto);font-weight:500;background:var(--velo)}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap}
+td .m{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--oro-t)}
+.due{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:640px){ .due{grid-template-columns:1fr} }
+.col{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.col .tit{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
+.col.gia .tit{color:var(--verde)} .col.no .tit{color:var(--fen)} .col.oro .tit{color:var(--oro)}
+.col ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;font-size:14.5px}
+.col li{display:flex;gap:9px;line-height:1.5}
+.col li::before{content:"";width:6px;height:6px;border-radius:50%;flex:0 0 auto;margin-top:8px}
+.col.gia li::before{background:var(--verde)} .col.no li::before{background:var(--fen)} .col.oro li::before{background:var(--oro)}
+.chiudi{background:var(--inch);color:var(--pietra);border-radius:var(--r);padding:26px 26px 22px;display:flex;flex-direction:column;gap:14px}
+:root[data-theme="dark"] .chiudi, :root:not([data-theme="light"]) .chiudi{border:1px solid var(--linea2)}
+.chiudi h3{color:inherit;font-size:21px}
+.chiudi ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;font-size:15px;opacity:.92}
+.chiudi code{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);color:var(--oro)}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+
+<div class="foglio">
+
+<header class="capo">
+  <div class="occhio">Atlante POI · studio</div>
+  <h1>Rilievo sul campo</h1>
+  <p class="somm">Come arrivare in una chiesa o in un museo con il lavoro già impostato, fare duecento
+  scatti senza perdersi, e tornare a casa trovando ogni panorama già al suo posto nell'atlante — con
+  solo da controllare.</p>
+</header>
+
+<section>
+  <h2><span class="n">Il problema vero</span>Non ti perdi nello spazio. Ti perdi nel tempo.</h2>
+  <p>Quando torni da una giornata di riprese hai tre perdite, e solo la prima è quella che si sente:</p>
+  <ol class="passi">
+    <li><b>Sul posto, l'orientamento</b><span>In una chiesa grande o in un museo su due piani, con il piano
+      di ripresa in testa e il treppiede in mano, dopo il ventesimo punto non sai più quale hai fatto e quale
+      no. Il GPS dentro non serve: sotto una volta di pietra sbaglia di trenta metri quando va bene.</span></li>
+    <li><b>Sul posto, il tempo</b><span>Ogni volta che ti fermi a ricostruire dove sei, a controllare la
+      pianta, a decidere se rifare uno scatto, il rilievo si allunga. Mezza giornata diventa una giornata.</span></li>
+    <li><b>A casa, l'abbinamento</b><span>Questa è la perdita che non si vede, ed è la più grande.
+      Duecento file che si chiamano <code>IMG_20260917_103012_00_047.jpg</code>, e per ognuno devi
+      riaprirlo, riconoscere dov'eri, e assegnarlo a una scena. È il lavoro che oggi fa sì che i panorami
+      restino su B2 per settimane senza entrare nell'atlante.</span></li>
+  </ol>
+  <div class="nota">La terza perdita è quella da cui parte tutto. Se l'abbinamento a casa è automatico,
+  <b>sul posto ti serve una cosa sola: un modo affidabile per dire «adesso sono al punto 7».</b> Tutto il
+  resto — dove sei, cosa hai fatto, cosa manca — ne discende.</div>
+</section>
+
+<section>
+  <h2><span class="n">La chiave</span>Il tempo, non la posizione</h2>
+  <p>Dentro un edificio nessun sensore ti dice dove sei. Ma c'è una cosa che il telefono e la fotocamera
+  hanno entrambi, precisa al secondo: <b>l'orologio</b>. Ogni scatto 360 porta la sua ora — nel nome del
+  file (Insta360 la scrive lì) o nei dati EXIF (tutte). E ogni tocco sul telefono può portare la sua.</p>
+  <p>Da qui il meccanismo: sul posto <b>tocchi il punto prima di scattare</b>. Il telefono annota «punto 7,
+  10:31:04». A casa, ogni file viene assegnato al punto toccato subito prima del suo scatto. Non serve sapere
+  dov'eri: serve sapere <em>quando</em> hai detto dov'eri.</p>
+
+  <div class="riq">
+    <svg viewBox="0 0 700 190" role="img" aria-label="Linea del tempo: i tocchi sui punti e gli scatti della fotocamera, e come ogni scatto viene assegnato al punto toccato subito prima">
+      <g font-family="'JetBrains Mono',monospace" font-size="11" fill="var(--smorto)">
+        <text x="12" y="46">telefono · tocchi</text>
+        <text x="12" y="126">fotocamera · scatti</text>
+      </g>
+      <line x1="150" y1="58" x2="690" y2="58" stroke="var(--linea2)" stroke-width="1.5"/>
+      <line x1="150" y1="138" x2="690" y2="138" stroke="var(--linea2)" stroke-width="1.5"/>
+      <g fill="var(--oro)" opacity=".10">
+        <rect x="172" y="58" width="116" height="80"/><rect x="300" y="58" width="150" height="80"/>
+        <rect x="462" y="58" width="96" height="80"/><rect x="570" y="58" width="118" height="80"/>
+      </g>
+      <g fill="var(--oro)">
+        <circle cx="172" cy="58" r="7"/><circle cx="300" cy="58" r="7"/><circle cx="462" cy="58" r="7"/><circle cx="570" cy="58" r="7"/>
+      </g>
+      <g font-family="'JetBrains Mono',monospace" font-size="11" fill="var(--inch)" text-anchor="middle">
+        <text x="172" y="40">6 · 10:29:50</text><text x="300" y="40">7 · 10:31:04</text>
+        <text x="462" y="40">8 · 10:33:40</text><text x="570" y="40">9 · 10:35:12</text>
+      </g>
+      <g fill="var(--linea2)" stroke="var(--carta)" stroke-width="1.5">
+        <circle cx="205" cy="138" r="6"/><circle cx="235" cy="138" r="6"/>
+        <circle cx="352" cy="138" r="6"/><circle cx="386" cy="138" r="6"/><circle cx="420" cy="138" r="6"/>
+        <circle cx="510" cy="138" r="6"/>
+        <circle cx="622" cy="138" r="6"/>
+      </g>
+      <circle cx="660" cy="138" r="6" fill="var(--fen)" stroke="var(--carta)" stroke-width="1.5"/>
+      <g font-family="'JetBrains Mono',monospace" font-size="10.5" fill="var(--smorto)" text-anchor="middle">
+        <text x="220" y="162">2 scatti → punto 6</text>
+        <text x="386" y="162">3 scatti (rifatto) → punto 7</text>
+        <text x="510" y="162">1 → 8</text>
+        <text x="622" y="162">1 → 9</text>
+        <text x="660" y="180" fill="var(--fen)">?</text>
+      </g>
+    </svg>
+    <div class="legenda">
+      <span><i class="pt oro"></i> tocco sul telefono: «sono al punto n»</span>
+      <span><i class="pt gr"></i> scatto della fotocamera, con la sua ora</span>
+      <span><i class="pt fen"></i> scatto senza tocco prima: te lo chiede</span>
+    </div>
+  </div>
+
+  <p>Tre scatti dopo il tocco 7 non sono un problema, sono la normalità: hai rifatto perché è passata una
+  persona. Restano tutti e tre attaccati al punto 7, e a casa scegli quello buono — o accetti l'ultimo, che
+  è quasi sempre quello giusto. Lo scatto rosso, invece, è arrivato senza un tocco davanti: la revisione te
+  lo mostra e ti chiede dove va. <b>Nessuno scatto sparisce in silenzio.</b></p>
+</section>
+
+<section>
+  <h2><span class="n">Le due macchine</span>Due abbinamenti, uno per ambiente</h2>
+  <p>Dentro si usa la Insta360 X6, fuori il drone Avata 360. Non è un dettaglio di attrezzatura: le due
+  macchine si abbinano in modi diversi, e ognuna è il caso facile per il suo ambiente.</p>
+  <div class="due">
+    <div class="col oro">
+      <div class="tit">Dentro · Insta360 X6</div>
+      <ul>
+        <li><b>L'ora è nel nome del file</b> — <code>IMG_20260917_103012_00_047</code> — sia sul
+          <code>.insp</code> sia sul JPG che esce da Insta360 Studio con lo stesso nome. «Abbina» legge
+          l'elenco della cartella e ha già tutte le ore: non scarica un byte.</li>
+        <li><b>L'orologio si sincronizza da solo</b> col telefono ogni volta che apri l'app Insta360 — cosa che
+          fai comunque per controllare l'inquadratura. Lo scatto di sincronizzazione resta come rete di
+          sicurezza, non come condizione.</li>
+        <li>Un'attenzione sola: esportando da Studio <b>non rinominare</b>. Un nome tuo perde l'ora, e
+          allora serve l'EXIF.</li>
+      </ul>
+    </div>
+    <div class="col oro">
+      <div class="tit">Fuori · Avata 360</div>
+      <ul>
+        <li>I file si chiamano <code>DJI_0047.JPG</code>: <b>nessuna ora nel nome</b>, ma nell'EXIF ci sono
+          <b>le coordinate GPS del drone</b> allo scatto, precise a pochi metri sotto il cielo aperto.</li>
+        <li>Quindi fuori la logica si capovolge: il tocco «sono qui» non serve nemmeno. La scena pianificata
+          ha la sua posizione sulla mappa, il file ha la sua: <b>si abbinano per distanza</b>, con l'ora come
+          spareggio fra punti vicini.</li>
+        <li>Nell'EXIF c'è anche <b>l'orientamento del drone</b>, affidabile perché in cielo non c'è ferro
+          intorno: fuori, <code>yaw_avanti</code> può essere una proposta seria.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="nota">«Abbina» sceglie da solo, file per file: <b>ora nel nome → per tempo · GPS nell'EXIF e
+  scene con coordinate → per distanza · altrimenti → ora dall'EXIF.</b> Nessuna scelta da fare. Il lettore
+  dei primi 64 KB in <code>b2-media.php</code> serve per il drone, non per la X6.</div>
+</section>
+
+<section>
+  <h2><span class="n">Quello che c'è già</span>Non è un sistema nuovo: sono tre schermate</h2>
+  <p>Il pezzo che sembra mancare è più piccolo di quanto sembri, perché la parte pesante l'atlante ce l'ha:
+  le scene hanno già una posizione sulla planimetria, la regia sa già leggere un album da B2 e smistarlo, il
+  puntatore sa già dire dove guarda una freccia.</p>
+  <div class="due">
+    <div class="col gia">
+      <div class="tit">Già in casa</div>
+      <ul>
+        <li>Le scene con <code>pos_x</code>/<code>pos_y</code> sulla planimetria, e il picker per metterle a un clic</li>
+        <li>L'archivio B2 con «Importa album intero», che elenca i file di una cartella</li>
+        <li>L'upload verso B2 dal browser (fino a 5 MB: perfetto per una foto del telefono)</li>
+        <li>Il puntatore nel panorama, per <code>yaw_avanti</code> e per le opere</li>
+        <li>L'atlante letto dal telefono: il POI si apre, la pianta c'è</li>
+      </ul>
+    </div>
+    <div class="col no">
+      <div class="tit">Quello che manca</div>
+      <ul>
+        <li>Il concetto di <b>piano di ripresa</b>: scene create <em>prima</em>, senza panorama, che aspettano lo scatto</li>
+        <li>La pagina da telefono con il tocco «sono qui», che funzioni <b>senza segnale</b></li>
+        <li>La lettura dell'ora — o del GPS — dagli scatti, senza scaricarli tutti</li>
+        <li>L'abbinamento automatico e la sua revisione</li>
+      </ul>
+    </div>
+  </div>
+  <div class="nota">La scelta che tiene tutto piccolo: <b>il piano di ripresa È l'elenco delle scene.</b>
+  Nessuna tabella parallela, nessun «punto» che poi va copiato in una scena. Prepari le scene in regia con
+  nome, ordine e posizione — e senza panorama. Sul campo le vedi come punti da fare. A casa si riempiono.
+  La stessa riga di <code>story_tour_scene</code>, dall'inizio alla fine.</div>
+</section>
+
+<section>
+  <h2><span class="n">Le tre schermate</span>Prepara · Sul campo · Abbina</h2>
+  <div class="tre">
+    <div class="sch"><div class="dove">Regia · a casa, prima</div><h3>Prepara</h3>
+      <p>Apri il POI, carichi la planimetria se non c'è, e crei le scene con «Clicca sulla planimetria»:
+      un clic, un nome, il numero d'ordine. Quello che fai già oggi, ma <em>prima</em> di andare, e senza
+      panorama. Dieci minuti per una chiesa.</p></div>
+    <div class="sch"><div class="dove">Telefono · sul posto</div><h3>Sul campo</h3>
+      <p>Apri il POI dal telefono. Vedi la pianta con i punti, il prossimo da fare evidenziato, un pulsante
+      grande. Tocchi, scatti, avanti. Se salti, aggiungi, rifai: si adatta. Funziona senza rete.</p></div>
+    <div class="sch"><div class="dove">Regia · a casa, dopo</div><h3>Abbina</h3>
+      <p>Scegli la cartella B2 dove hai scaricato la fotocamera. La regia legge l'ora o il GPS di ogni
+      file, lo assegna al punto, ti mostra la griglia da confermare. Un clic per scena e i panorami sono
+      nell'atlante.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">Sul campo</span>La pagina da telefono, nel dettaglio</h2>
+  <div class="tel">
+    <div class="schermo" aria-hidden="true"><div class="dentro">
+      <div class="barra"><b>Santuario · Custonaci</b><span>7 di 12 · offline ✓</span></div>
+      <div class="pianta">
+        <span class="pin fatto" style="left:50%;top:88%">0</span><span class="pin fatto" style="left:50%;top:74%">1</span>
+        <span class="pin fatto" style="left:50%;top:58%">2</span><span class="pin fatto" style="left:50%;top:42%">3</span>
+        <span class="pin fatto" style="left:20%;top:42%">100</span><span class="pin fatto" style="left:80%;top:42%">200</span>
+        <span class="pin qui" style="left:50%;top:26%">4</span><span class="pin" style="left:50%;top:12%">5</span>
+      </div>
+      <div class="lista">
+        <div class="voce fatto"><b>3</b><span class="t">La crociera</span><span class="h">10:29 · 2</span></div>
+        <div class="voce qui"><b>4</b><span class="t">Il presbiterio</span><span class="h">adesso</span></div>
+        <div class="voce"><b>5</b><span class="t">Coro e abside</span><span class="h">—</span></div>
+      </div>
+      <div class="grande">Sono al punto 4 · scatto<small>tocca prima di scattare · poi «Avanti»</small></div>
+    </div></div>
+    <ul>
+      <li><b>Un pulsante solo, grande.</b> «Sono qui» sul punto evidenziato. Il tocco scrive l'ora. Poi
+        scatti con la fotocamera — con la sua app, il suo telecomando, come fai ora. La pagina non parla con
+        la fotocamera e non deve: fa da <em>orologio testimone</em>.</li>
+      <li><b>Il prossimo punto è già scelto.</b> Segue l'ordine del piano, ma puoi toccare un punto qualsiasi
+        sulla pianta o nella lista: se sei arrivato al transetto prima del previsto, tocchi 200 e via.</li>
+      <li><b>Rifare è un tocco.</b> «Rifaccio» sullo stesso punto: un secondo tocco sullo stesso numero apre
+        una nuova finestra, e gli scatti dopo restano suoi.</li>
+      <li><b>Un punto in più, sul momento.</b> Tieni premuto sulla pianta dove sei: nasce una scena nuova con
+        un numero provvisorio e la posizione già segnata. Il nome glielo dai a casa.</li>
+      <li><b>Una nota vocale o una foto.</b> Opzionali, ma preziose in revisione: la foto del telefono mostra
+        quello che vedevi, e va su B2 dal browser (il limite dei 5 MB basta, il telefono comprime da solo).</li>
+      <li><b>Senza rete, per davvero.</b> Il piano si scarica una volta sul sagrato — pianta compresa — e da lì
+        tutto sta nel telefono. I tocchi si accodano e partono quando torna il segnale; lo stato in alto lo
+        dice sempre. Una chiesa di pietra non ha campo, e la pagina non può fare finta di niente.</li>
+      <li><b>Lo scatto di sincronizzazione.</b> Prima cosa in assoluto: tocchi «sincronizza» e fai uno scatto
+        qualunque. È l'unico modo per sapere di quanto l'orologio della fotocamera è diverso da quello del
+        telefono. Con la X6 che si sincronizza dall'app è quasi sempre zero — ma trenta secondi che, il
+        giorno che non lo è, salvano tutta la giornata.</li>
+    </ul>
+  </div>
+  <div class="nota">Dove il GPS invece funziona — un sentiero, una salina, il sagrato — la pagina lo
+  annota comunque a ogni tocco, senza chiederglielo. Fuori è un regalo; dentro è ignorato. <b>Stesso
+  strumento per la chiesa e per il Cofano.</b></div>
+</section>
+
+<section>
+  <h2><span class="n">Abbina</span>Come si decide chi va dove</h2>
+  <p>La revisione parte scegliendo la cartella B2 in cui hai scaricato la fotocamera — la stessa finestra
+  dell'archivio che usi già. Da lì, in ordine:</p>
+  <ol class="passi">
+    <li><b>L'ora — o la posizione — di ogni file, senza scaricarlo</b><span>Se il nome porta data e ora
+      (la X6: <code>IMG_20260917_103012_…</code>) si legge dal nome e non si trasferisce un byte. Per il drone
+      bastano i primi 64 KB del file per leggere l'EXIF, ora e GPS — un'aggiunta piccola a
+      <code>b2-media.php</code>, che deve solo inoltrare l'intestazione <code>Range</code>. Duecento panorami
+      da 20 MB diventano 12 MB di lettura, non 4 GB.</span></li>
+    <li><b>La correzione dell'orologio</b><span>Dallo scatto di sincronizzazione: la differenza fra l'ora del
+      primo file e l'ora del primo tocco è lo scarto, e si applica a tutti. La revisione lo mostra in chiaro
+      («fotocamera avanti di 1 min 42 s») e ti lascia ritoccarlo a mano se qualcosa non torna.</span></li>
+    <li><b>L'assegnazione</b><span>Per tempo: ogni scatto va al tocco più recente che lo precede, purché entro
+      la finestra di quel punto (dal tocco al tocco successivo, o al massimo qualche minuto). Per distanza: al
+      punto pianificato più vicino, se entro una decina di metri. Più scatti nello stesso punto restano
+      insieme; l'ultimo è proposto come buono, gli altri restano a portata di clic.</span></li>
+    <li><b>La griglia da confermare</b><span>Una riga per punto: nome, miniatura del panorama proposto,
+      quanti scatti alternativi, la foto del telefono se c'è. I casi dubbi in cima: scatti senza tocco, punti
+      senza scatto, finestre troppo lunghe. Confermi riga per riga o tutto insieme.</span></li>
+    <li><b>La scrittura nell'atlante</b><span>Il panorama entra in <code>panorama</code> della scena, la scena
+      passa da «da riprendere» a «abbinata». Non si attiva da sola: la vedi nel tour solo quando la accendi,
+      come oggi.</span></li>
+  </ol>
+  <h3>E la direzione delle frecce?</h3>
+  <p>Le fotocamere 360 scrivono nel file anche la bussola (<code>PoseHeadingDegrees</code>), quando l'hanno.
+  Se c'è, la revisione può proporre <code>yaw_avanti</code> da sola, rispetto al nord della planimetria — che
+  si imposta una volta per POI. Ma dentro una chiesa la bussola del telefono e della fotocamera <b>mente
+  spesso</b>: ferro nelle volte, cancellate, impianti. Quindi è una proposta, marcata come tale, e il puntatore
+  resta il giudice. Mai un dato di bussola scritto come certo. Fuori, col drone, la proposta vale di più.</p>
+</section>
+
+<section>
+  <h2><span class="n">Il modello</span>Poche righe, tutte su tabelle che esistono</h2>
+  <div class="tab">
+    <table>
+      <thead><tr><th>Dove</th><th>Cosa si aggiunge</th><th>A cosa serve</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">story_tour_scene</span></td><td><span class="m">stato_rilievo</span></td><td>da_riprendere · scattata · abbinata · pubblicata: la scena racconta a che punto è</td></tr>
+        <tr><td></td><td><span class="m">toccata_il</span></td><td>l'ora del tocco sul campo, l'ancora dell'abbinamento</td></tr>
+        <tr><td></td><td><span class="m">scatti_candidati</span></td><td>gli URL alternativi dello stesso punto, per ripensarci senza rifare</td></tr>
+        <tr><td></td><td><span class="m">foto_campo</span> · <span class="m">nota_campo</span></td><td>la foto del telefono e la nota: aiutano la revisione, non vanno in pagina</td></tr>
+        <tr><td></td><td><span class="m">lat_campo</span> · <span class="m">lng_campo</span></td><td>la posizione al tocco, quando il cielo si vede — e il bersaglio per gli scatti del drone</td></tr>
+        <tr><td><span class="m">story_rilievo</span> (nuova)</td><td>poi_id, iniziato_il, finito_il, <span class="m">scarto_orologio_ms</span>, cartella_b2, note</td><td>la giornata di riprese come oggetto: uno scarto d'orologio per sessione, non per scena</td></tr>
+        <tr><td><span class="m">story_poi</span></td><td><span class="m">nord_planimetria</span></td><td>i gradi del nord sulla pianta, per tradurre la bussola in yaw — una volta per luogo</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Una cosa da decidere presto, perché nei musei salta fuori subito: oggi un POI ha <b>una</b> planimetria
+  (<code>site_plan</code>). Un museo su due piani ne ha due. La strada meno invasiva è un campo
+  <code>piani</code> sul POI (elenco nome + immagine) e un campo <code>piano</code> sulla scena; la pianta
+  singola resta il caso normale e non cambia niente per le chiese.</p>
+</section>
+
+<section>
+  <h2><span class="n">Dove si rompe</span>I casi che ho messo alla prova sulla carta</h2>
+  <ol class="passi">
+    <li><b>Hai scattato senza toccare</b><span>Lo scatto finisce fra i dubbi con la sua ora e la miniatura;
+      lo trascini sul punto giusto. Nessuna assegnazione forzata.</span></li>
+    <li><b>Hai toccato senza scattare</b><span>Il punto risulta «toccato, senza scatto». Lo sai subito, e
+      sai che a quel punto devi tornare — o lo sposti alla prossima uscita.</span></li>
+    <li><b>Hai fatto i punti in ordine diverso dal piano</b><span>Indifferente: conta il tocco, non
+      l'ordine. Il piano serve a non dimenticare, non a vincolare.</span></li>
+    <li><b>Bracketing / HDR: cinque file per scatto</b><span>Stanno nello stesso punto e si vedono come gruppo.
+      Se la fotocamera li fonde in un file solo, meglio; se no, scegli il fuso.</span></li>
+    <li><b>Due luoghi nella stessa giornata, stessa scheda di memoria</b><span>Ogni sessione ha il suo
+      intervallo di tempo: gli scatti fuori dall'intervallo non entrano nel rilievo sbagliato. La cartella
+      B2 può anche essere la stessa.</span></li>
+    <li><b>La fotocamera ha l'orologio sballato di un'ora (fuso, ora legale)</b><span>Lo scatto di
+      sincronizzazione lo assorbe, qualunque sia. Senza sincronizzazione, la revisione lo dice: «gli scatti
+      cadono tutti fuori dalle finestre — probabile scarto d'orologio» e propone lo scarto che li farebbe
+      combaciare.</span></li>
+    <li><b>Il telefono muore a metà</b><span>I tocchi fatti stanno nel telefono, non in memoria di pagina:
+      si riprende da dove eri. È il motivo per cui la coda è persistente e non «in RAM».</span></li>
+    <li><b>Nessun segnale fino al parcheggio</b><span>Previsto: la pagina è nata per questo. L'unica cosa
+      che serve online è il primo scaricamento del piano.</span></li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="n">Cosa non fare</span>Tre scorciatoie che sembrano furbe</h2>
+  <p><b>Far scattare la fotocamera dalla pagina.</b> Ogni marca ha il suo protocollo, cambia a ogni firmware,
+  e il browser non ci arriva comunque. La pagina fa da orologio testimone: robusto, e vale per qualunque
+  fotocamera, anche la prossima.</p>
+  <p><b>Il posizionamento indoor.</b> Beacon, Wi-Fi fingerprinting, sensori inerziali: tutto materiale da
+  laboratorio, tutto da installare in ogni chiesa, tutto sbagliato di metri. Il tocco è più preciso di
+  qualunque sensore, perché lo fai tu.</p>
+  <p><b>Riconoscere il punto dall'immagine.</b> Confrontare il panorama con la pianta per capire dove è
+  stato scattato: affascinante, e inaffidabile in modo imbarazzante. Due navate laterali si somigliano
+  troppo. Non prima di avere una base di panorami già abbinati a mano su cui verificarlo — e a quel punto
+  serve meno.</p>
+</section>
+
+<section>
+  <h2><span class="n">Oltre le chiese</span>Lo stesso strumento, con il cielo sopra</h2>
+  <p>Su un sentiero le tappe sono già scene con coordinate; il tocco porta il GPS e la foto del telefono, e
+  l'abbinamento è lo stesso. In una salina, in una cantina, in una cripta, uguale. È il modo in cui i
+  duecento panorami che oggi aspettano su B2 smettono di aspettare — e in cui la prossima chiesa, dopo
+  Custonaci, si fa in una mattina invece che in una settimana.</p>
+</section>
+
+<section>
+  <div class="chiudi">
+    <h3>Da fare, in quest'ordine</h3>
+    <ol>
+      <li>Migrazione: <code>stato_rilievo</code>, <code>toccata_il</code>, <code>scatti_candidati</code> e i campi di campo su <code>story_tour_scene</code>; <code>story_rilievo</code>; <code>nord_planimetria</code></li>
+      <li>Regia: le scene «da riprendere» nel piano, con il loro stato in lista</li>
+      <li><code>rilievo.html</code>: la pagina da telefono, offline, con tocco, sincronizzazione, punto al volo, foto e GPS</li>
+      <li><code>b2-media.php</code>: inoltro dell'intestazione <code>Range</code>, per l'EXIF dei file del drone</li>
+      <li>Regia: «Abbina» — ore dal nome, EXIF dal drone, scarto, assegnazione per tempo o per distanza, griglia di revisione, scrittura</li>
+      <li>Dopo, se serve: i piani multipli per i musei, la bussola come proposta di <code>yaw_avanti</code></li>
+    </ol>
+    <p style="font-size:14.5px;opacity:.75;margin-top:4px">I passi 1–3 si provano già alla prossima uscita,
+    anche prima che «Abbina» esista: i tocchi restano salvati e l'abbinamento si fa quando arriva.</p>
+  </div>
+</section>
+
+</div>
